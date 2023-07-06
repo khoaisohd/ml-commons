@@ -1,0 +1,33 @@
+image: iad.ocir.io/odx-sre/oracle/gitlab-dind:0.10
+
+variables:
+  GRADLE_OPTS: ""
+  OPENSEARCH_VERSION: 2.8.0
+
+stages:
+  - build
+  - publish
+
+build:
+  stage: build
+  only:
+    - branches
+    - tags
+  script:
+    - docker build --build-arg OPENSEARCH_VERSION=${OPENSEARCH_VERSION} --load -t ${CI_JOB_ID} .
+    - mkdir -p build/distributions
+    - docker create --name ephemeral-container ${CI_JOB_ID}
+    - docker cp ephemeral-container:/opensearch/plugin/build/distributions/. build/distributions
+  artifacts:
+    paths:
+      - build/distributions
+
+publish:
+  stage: publish
+  only:
+    - tags
+  script:
+    - oci os object put --auth instance_principal --region us-ashburn-1 --namespace odx-sre --bucket-name oracle --name opensearch-ml-commons-${CI_COMMIT_TAG}.zip --file build/distributions/opensearch-ml-${OPENSEARCH_VERSION}.0.zip
+
+after_script:
+  - docker rm ephemeral-container
