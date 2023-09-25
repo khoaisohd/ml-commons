@@ -1,8 +1,8 @@
-OPENJDK_VERSION=14.0.2
-OPENJDK_FILE="https://artifactory.oci.oraclecorp.com/build-service-generic-local/JDK/14/openjdk-${OPENJDK_VERSION}_linux-x64_bin.tar"
+OPENJDK_VERSION=17.0.1
+OPENJDK_FILE="https://artifactory.oci.oraclecorp.com/build-service-generic-local/JDK/17/openjdk-${OPENJDK_VERSION}_linux-x64_bin.tar.gz"
 OPENJDK_HOME="/usr/lib/jvm/jdk-${OPENJDK_VERSION}"
 
-install-java-14:
+install-java-17:
 	mkdir "${OPENJDK_HOME}"
 	curl -fsSL -o /tmp/openjdk.tar "${OPENJDK_FILE}"
 	tar -C "${OPENJDK_HOME}" --strip-components 1 -xf /tmp/openjdk.tar
