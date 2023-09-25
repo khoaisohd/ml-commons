@@ -9,7 +9,6 @@ install-java-17:
 	update-alternatives --install /usr/bin/java java "${OPENJDK_HOME}/bin/java" 1000
 	update-alternatives --install /usr/bin/javac javac "${OPENJDK_HOME}/bin/javac" 1000
 	update-alternatives --set java "${OPENJDK_HOME}/bin/java"
-	update-alternatives --display java
 	java -version
 
 master:
@@ -28,4 +27,5 @@ user-dev:
 
 output:
 	mkdir -p output/ml-commons-os-plugin
+	ls -l build/distributions/
 	cp build/distributions/*.zip output/ml-commons-os-plugin
