@@ -27,5 +27,5 @@ user-dev:
 
 output:
 	mkdir -p output/ml-commons-os-plugin
-	ls -l build/distributions/
+	ls -l plugin/build/distributions/
 	cp build/distributions/*.zip output/ml-commons-os-plugin
