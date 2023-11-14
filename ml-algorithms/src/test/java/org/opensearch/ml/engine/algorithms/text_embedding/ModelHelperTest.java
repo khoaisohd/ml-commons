@@ -5,6 +5,7 @@
 
 package org.opensearch.ml.engine.algorithms.text_embedding;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -16,6 +17,7 @@ import org.opensearch.core.action.ActionListener;
 import org.opensearch.ml.common.FunctionName;
 import org.opensearch.ml.common.model.MLModelConfig;
 import org.opensearch.ml.common.model.MLModelFormat;
+import org.opensearch.ml.common.model.TextEmbeddingModelConfig;
 import org.opensearch.ml.common.transport.register.MLRegisterModelInput;
 import org.opensearch.ml.engine.MLEngine;
 import org.opensearch.ml.engine.ModelHelper;
@@ -41,7 +43,10 @@ public class ModelHelperTest {
     public ExpectedException exceptionRule = ExpectedException.none();
 
     private ModelHelper modelHelper;
+    private EmbeddedOciObjectStorageServer embeddedOciObjectStorageServer;
     private MLModelFormat modelFormat;
+    private MLModelConfig modelConfig;
+    private MLRegisterModelInput.MLRegisterModelInputBuilder modelInputBuilder;
     private String modelId;
     private MLEngine mlEngine;
     private String hashValue = "e13b74006290a9d0f58c1376f9629d4ebc05a0f9385f40db837452b167ae9021";
@@ -55,19 +60,41 @@ public class ModelHelperTest {
     Encryptor encryptor;
 
     @Before
-    public void setup() throws URISyntaxException {
+    public void setup() throws URISyntaxException, IOException {
         MockitoAnnotations.openMocks(this);
         modelFormat = MLModelFormat.TORCH_SCRIPT;
+        modelConfig =
+                TextEmbeddingModelConfig.builder()
+                        .modelType("modelType")
+                        .embeddingDimension(1)
+                        .frameworkType(TextEmbeddingModelConfig.FrameworkType.HUGGINGFACE_TRANSFORMERS)
+                        .build();
+        modelInputBuilder =
+                MLRegisterModelInput.builder()
+                        .modelName("model_name")
+                        .modelFormat(modelFormat)
+                        .modelConfig(modelConfig)
+                        .hashValue(hashValue);
+
         modelId = "model_id";
         encryptor = new EncryptorImpl("m+dWmfmnNRiNlOdej/QelEkvMTyH//frS2TBeS2BP4w=");
         mlEngine = new MLEngine(Path.of("/tmp/test" + modelId), encryptor);
         modelHelper = new ModelHelper(mlEngine);
+        embeddedOciObjectStorageServer = new EmbeddedOciObjectStorageServer();
+        embeddedOciObjectStorageServer.start();
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        if (embeddedOciObjectStorageServer != null) {
+            embeddedOciObjectStorageServer.close();
+        }
     }
 
     @Test
     public void testDownloadAndSplit_UrlFailure() {
-        modelId = "url_failure_model_id";
-        modelHelper.downloadAndSplit(modelFormat, modelId, "model_name", "1", "http://testurl", null, FunctionName.TEXT_EMBEDDING, actionListener);
+        MLRegisterModelInput modelInput = modelInputBuilder.url("http://testurl").build();
+        modelHelper.downloadAndSplit(modelInput, "url_failure_model_id", "1" , FunctionName.TEXT_EMBEDDING, actionListener);
         ArgumentCaptor<Exception> argumentCaptor = ArgumentCaptor.forClass(Exception.class);
         verify(actionListener).onFailure(argumentCaptor.capture());
         assertEquals(PrivilegedActionException.class, argumentCaptor.getValue().getClass());
@@ -76,7 +103,9 @@ public class ModelHelperTest {
     @Test
     public void testDownloadAndSplit() throws URISyntaxException {
         String modelUrl = getClass().getResource("traced_small_model.zip").toURI().toString();
-        modelHelper.downloadAndSplit(modelFormat, modelId, "model_name", "1", modelUrl, hashValue, FunctionName.TEXT_EMBEDDING, actionListener);
+        MLRegisterModelInput modelInput = modelInputBuilder.url(modelUrl).build();
+        modelHelper.downloadAndSplit(modelInput, modelId, "1", FunctionName.TEXT_EMBEDDING, actionListener);
+
         ArgumentCaptor<Map> argumentCaptor = ArgumentCaptor.forClass(Map.class);
         verify(actionListener).onResponse(argumentCaptor.capture());
         assertNotNull(argumentCaptor.getValue());
@@ -84,9 +113,63 @@ public class ModelHelperTest {
     }
 
     @Test
+    public void testDownloadAndSplitFromOci() throws URISyntaxException {
+        MLRegisterModelInput modelInput =
+                modelInputBuilder
+                        .url("oci-os://idee4xpu3dvm/phuong-bucket/traced_small_model.zip")
+                        .ociOsEndpoint(EmbeddedOciObjectStorageServer.BASE_URI)
+                        .ociClientAuthType(MLRegisterModelInput.OciClientAuthType.USER_PRINCIPAL)
+                        .ociClientAuthRegion("uk-london-1")
+                        .ociClientAuthTenantId("ocid1.tenancy.oc1..aaaaaaaagkbzgg6lpzrf47xzy4rjoxg4de6ncfiq2rncmjiujvy2hjgxvziq")
+                        .ociClientAuthUserId("ocid1.user.oc1..aaaaaaaajj7kdinuhkpct4rhsj7gfhyh5dja7ltcd5rrsylrozptssllagyq")
+                        .ociClientAuthFingerprint("3a:01:de:90:39:f4:b1:2f:02:75:77:c1:21:f2:20:24")
+                        .ociClientAuthPemfilepath(getClass().getResource("fakeKey.pem").toURI().getPath())
+                        .build();
+        modelHelper.downloadAndSplit(modelInput, modelId, "1", FunctionName.TEXT_EMBEDDING, actionListener);
+        ArgumentCaptor<Map> argumentCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(actionListener).onResponse(argumentCaptor.capture());
+        assertNotNull(argumentCaptor.getValue());
+        assertNotEquals(0, argumentCaptor.getValue().size());
+    }
+
+    @Test
+    public void testDownloadAndSplitFromOci_whenMissingClientAuthType() {
+        MLRegisterModelInput modelInput =
+                modelInputBuilder
+                        .url("oci-os://idee4xpu3dvm/phuong-bucket/traced_small_model.zip")
+                        .ociClientAuthType(MLRegisterModelInput.OciClientAuthType.NULL_PRINCIPAL)
+                        .ociOsEndpoint(EmbeddedOciObjectStorageServer.BASE_URI)
+                        .build();
+        modelHelper.downloadAndSplit(modelInput, modelId, "1", FunctionName.TEXT_EMBEDDING, actionListener);
+        ArgumentCaptor<Exception> argumentCaptor = ArgumentCaptor.forClass(Exception.class);
+        verify(actionListener).onFailure(argumentCaptor.capture());
+        assertEquals(IllegalArgumentException.class, argumentCaptor.getValue().getClass());
+    }
+
+    @Test
+    public void testDownloadAndSplitFromOci_whenHavingInvalidUrl() throws URISyntaxException {
+        MLRegisterModelInput modelInput =
+                modelInputBuilder
+                        .url("oci-os://idee4xpu3dvm/traced_small_model.zip")
+                        .ociOsEndpoint(EmbeddedOciObjectStorageServer.BASE_URI)
+                        .ociClientAuthType(MLRegisterModelInput.OciClientAuthType.USER_PRINCIPAL)
+                        .ociClientAuthRegion("uk-london-1")
+                        .ociClientAuthTenantId("ocid1.tenancy.oc1..aaaaaaaagkbzgg6lpzrf47xzy4rjoxg4de6ncfiq2rncmjiujvy2hjgxvziq")
+                        .ociClientAuthUserId("ocid1.user.oc1..aaaaaaaajj7kdinuhkpct4rhsj7gfhyh5dja7ltcd5rrsylrozptssllagyq")
+                        .ociClientAuthFingerprint("3a:01:de:90:39:f4:b1:2f:02:75:77:c1:21:f2:20:24")
+                        .ociClientAuthPemfilepath(getClass().getResource("fakeKey.pem").toURI().getPath())
+                        .build();
+        modelHelper.downloadAndSplit(modelInput, modelId, "1", FunctionName.TEXT_EMBEDDING, actionListener);
+        ArgumentCaptor<Exception> argumentCaptor = ArgumentCaptor.forClass(Exception.class);
+        verify(actionListener).onFailure(argumentCaptor.capture());
+        assertEquals(IllegalArgumentException.class, argumentCaptor.getValue().getClass());
+    }
+
+    @Test
     public void testDownloadAndSplit_HashFailure() throws URISyntaxException {
         String modelUrl = getClass().getResource("traced_small_model.zip").toURI().toString();
-        modelHelper.downloadAndSplit(modelFormat, modelId, "model_name", "1", modelUrl, "wrong_hash_value", FunctionName.TEXT_EMBEDDING, actionListener);
+        MLRegisterModelInput modelInput = modelInputBuilder.url(modelUrl).hashValue("wrong_hash_value").build();
+        modelHelper.downloadAndSplit(modelInput, modelId, "1", FunctionName.TEXT_EMBEDDING, actionListener);
         ArgumentCaptor<Exception> argumentCaptor = ArgumentCaptor.forClass(Exception.class);
         verify(actionListener).onFailure(argumentCaptor.capture());
         assertEquals(IllegalArgumentException.class, argumentCaptor.getValue().getClass());
@@ -95,7 +178,8 @@ public class ModelHelperTest {
     @Test
     public void testDownloadAndSplit_Hash() throws URISyntaxException {
         String modelUrl = getClass().getResource("traced_small_model.zip").toURI().toString();
-        modelHelper.downloadAndSplit(modelFormat, modelId, "model_name", "1", modelUrl, hashValue, FunctionName.TEXT_EMBEDDING, actionListener);
+        MLRegisterModelInput modelInput = modelInputBuilder.url(modelUrl).build();
+        modelHelper.downloadAndSplit(modelInput, modelId, "1", FunctionName.TEXT_EMBEDDING, actionListener);
         ArgumentCaptor<Map> argumentCaptor = ArgumentCaptor.forClass(Map.class);
         verify(actionListener).onResponse(argumentCaptor.capture());
         assertNotNull(argumentCaptor.getValue());
