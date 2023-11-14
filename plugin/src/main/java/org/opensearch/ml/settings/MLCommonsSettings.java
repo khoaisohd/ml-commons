@@ -66,7 +66,7 @@ public final class MLCommonsSettings {
     public static final Setting<String> ML_COMMONS_TRUSTED_URL_REGEX = Setting
         .simpleString(
             "plugins.ml_commons.trusted_url_regex",
-            "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]",
+            "^(https?|ftp|file|oci-os)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]",
             Setting.Property.NodeScope,
             Setting.Property.Dynamic
         );
