@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -278,11 +279,8 @@ public class ModelHelper {
                              .objectName(object)
                              .build()).getInputStream()) {
             final File destinationFile = new File(targetFilePath);
-            if (Files.exists(destinationFile.toPath())) {
-                return;
-            }
             FileUtils.forceMkdir(destinationFile.getParentFile());
-            Files.copy(inStream, destinationFile.toPath());
+            Files.copy(inStream, destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception ex) {
             throw new RuntimeException("Failed to download file from object storage ", ex);
         }
