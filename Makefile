@@ -26,5 +26,7 @@ user-dev:
 	sh ./gradlew -Dbuild.snapshot=true assemble
 
 output:
+	unzip plugin/build/distributions/opensearch-ml-2.11.0.0-SNAPSHOT.zip
+	ls -lh plugin/build/distributions/opensearch-ml-2.11.0.0-SNAPSHOT
 	mkdir -p output/ml-commons-os-plugin
 	cp plugin/build/distributions/*.zip output/ml-commons-os-plugin
