@@ -43,6 +43,12 @@ dependencies {
     implementation group: 'ai.djl.pytorch', name: 'pytorch-model-zoo'
     implementation group: 'ai.djl', name: 'api'
     implementation group: 'ai.djl.huggingface', name: 'tokenizers'
+
+    if (project.hasProperty('includePytorchNativeDependencies')) {
+        implementation group: 'ai.djl.pytorch', name: 'pytorch-jni'
+        implementation group: 'ai.djl.pytorch', name: "pytorch-native-${project.pytorchFlavor}", classifier: "${project.platformClassifier}"
+    }
+
     implementation("ai.djl.onnxruntime:onnxruntime-engine:0.21.0") {
         exclude group: "com.microsoft.onnxruntime", module: "onnxruntime"
     }
