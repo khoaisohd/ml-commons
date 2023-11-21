@@ -216,9 +216,6 @@ public class ModelHelper {
                 Path modelPartsPath = registerModelPath.resolve("chunks");
                 File modelZipFile = new File(modelPath);
                 log.debug("download model to file {}", modelZipFile.getAbsolutePath());
-                // TODO chunking and uploading directly to OS instead of writing to local file
-                // TODO refactor cloud provider specific logic to different classes to make the code
-                // more organized and easy to add new cloud provider support
                 if (OCI_OS_SCHEME.equals(uri.getScheme())) {
                     downloadFromOciObjectStorage(registerModelInput, uri, modelPath);
                 } else {
@@ -246,11 +243,16 @@ public class ModelHelper {
         }
     }
 
+    /**
+     * Download model from object storage
+     * uri format: oci-os://{namespace}/{bucketName}/{objectName}
+     */
     private void downloadFromOciObjectStorage(
             final MLRegisterModelInput registerModelInput,
             final URI uri,
             final String targetFilePath) {
         final String namespace = uri.getHost();
+        // url path is expected to have format /{bucketName}/{objectName}
         final String[] parts = uri.getPath().split("/");
         Preconditions.checkArgument(
                 parts.length == 3, "Invalid OCI object storage URI %s", registerModelInput.getUrl());
@@ -282,7 +284,7 @@ public class ModelHelper {
             FileUtils.forceMkdir(destinationFile.getParentFile());
             Files.copy(inStream, destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception ex) {
-            throw new RuntimeException("Failed to download file from object storage ", ex);
+            throw new RuntimeException("Failed to download file from object storage " + registerModelInput, ex);
         }
     }
 
@@ -291,27 +293,28 @@ public class ModelHelper {
         final MLRegisterModelInput.OciClientAuthType ociClientAuthType = registerModelInput.getOciClientAuthType();
         log.debug("Get auth details for OCI client auth type: {}", ociClientAuthType);
 
-        if (ociClientAuthType == MLRegisterModelInput.OciClientAuthType.RESOURCE_PRINCIPAL) {
-            return ResourcePrincipalAuthenticationDetailsProvider.builder().build();
-        } else if (ociClientAuthType == MLRegisterModelInput.OciClientAuthType.INSTANCE_PRINCIPAL) {
-            return InstancePrincipalsAuthenticationDetailsProvider.builder().build();
-        } else if (ociClientAuthType == MLRegisterModelInput.OciClientAuthType.USER_PRINCIPAL) {
-            return SimpleAuthenticationDetailsProvider.builder()
-                    .tenantId(registerModelInput.getOciClientAuthTenantId())
-                    .userId(registerModelInput.getOciClientAuthUserId())
-                    .region(Region.fromRegionCodeOrId(registerModelInput.getOciClientAuthRegion()))
-                    .fingerprint(registerModelInput.getOciClientAuthFingerprint())
-                    .privateKeySupplier(
-                            () -> {
-                                try {
-                                    return new FileInputStream(registerModelInput.getOciClientAuthPemfilepath());
-                                } catch (Exception e) {
-                                    throw new RuntimeException(e);
-                                }
-                            })
-                    .build();
-        } else {
-            throw new IllegalArgumentException("OCI client auth type is not supported " + ociClientAuthType);
+        switch (ociClientAuthType) {
+            case RESOURCE_PRINCIPAL:
+                return ResourcePrincipalAuthenticationDetailsProvider.builder().build();
+            case INSTANCE_PRINCIPAL:
+                return InstancePrincipalsAuthenticationDetailsProvider.builder().build();
+            case USER_PRINCIPAL:
+                return SimpleAuthenticationDetailsProvider.builder()
+                        .tenantId(registerModelInput.getOciClientAuthTenantId())
+                        .userId(registerModelInput.getOciClientAuthUserId())
+                        .region(Region.fromRegionCodeOrId(registerModelInput.getOciClientAuthRegion()))
+                        .fingerprint(registerModelInput.getOciClientAuthFingerprint())
+                        .privateKeySupplier(
+                                () -> {
+                                    try {
+                                        return new FileInputStream(registerModelInput.getOciClientAuthPemfilepath());
+                                    } catch (Exception e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                })
+                        .build();
+            default:
+                throw new IllegalArgumentException("OCI client auth type is not supported " + ociClientAuthType);
         }
     }
 

@@ -558,6 +558,9 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
         RESOURCE_PRINCIPAL,
         INSTANCE_PRINCIPAL,
         USER_PRINCIPAL,
+        // MLRegisterModelInput won't be able to serialized when ociClientAuthType is null since StreamOutput
+        // does not support writeOptionalEnum. Let's have a special value NULL_PRINCIPAL when ociClientAuthType
+        // is not provided
         NULL_PRINCIPAL;
 
         public static OciClientAuthType from(String value) {
