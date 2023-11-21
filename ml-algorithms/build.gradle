@@ -40,9 +40,9 @@ dependencies {
     implementation group: 'com.google.guava', name: 'guava', version: '32.0.1-jre'
     implementation group: 'com.google.code.gson', name: 'gson', version: '2.10.1'
     implementation platform("ai.djl:bom:0.21.0")
-    implementation group: 'ai.djl.pytorch', name: 'pytorch-model-zoo', version: '0.21.0'
-    implementation group: 'ai.djl', name: 'api', version: '0.21.0'
-    implementation group: 'ai.djl.huggingface', name: 'tokenizers', version: '0.21.0'
+    implementation group: 'ai.djl.pytorch', name: 'pytorch-model-zoo'
+    implementation group: 'ai.djl', name: 'api'
+    implementation group: 'ai.djl.huggingface', name: 'tokenizers'
 
 //    if (project.hasProperty('includePytorchNativeDependencies')) {
 //        implementation group: 'ai.djl.pytorch', name: 'pytorch-jni'
@@ -64,9 +64,9 @@ dependencies {
 //        }
 //    }
 
-    dependencies {
-        implementation "com.microsoft.onnxruntime:onnxruntime_gpu:1.14.0"
-    }
+//    dependencies {
+//        implementation "com.microsoft.onnxruntime:onnxruntime_gpu:1.14.0"
+//    }
 
     implementation platform('software.amazon.awssdk:bom:2.20.19')
     implementation 'software.amazon.awssdk:auth'
