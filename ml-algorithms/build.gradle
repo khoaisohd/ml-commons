@@ -39,15 +39,15 @@ dependencies {
     testImplementation group: 'org.mockito', name: 'mockito-inline', version: '4.4.0'
     implementation group: 'com.google.guava', name: 'guava', version: '32.0.1-jre'
     implementation group: 'com.google.code.gson', name: 'gson', version: '2.10.1'
-    implementation platform("ai.djl:bom:0.21.0")
-    implementation group: 'ai.djl.pytorch', name: 'pytorch-model-zoo'
-    implementation group: 'ai.djl', name: 'api'
-    implementation group: 'ai.djl.huggingface', name: 'tokenizers'
+//    implementation platform("ai.djl:bom:0.21.0")
+    implementation group: 'ai.djl.pytorch', name: 'pytorch-model-zoo', version: '0.21.0'
+    implementation group: 'ai.djl', name: 'api', version: '0.21.0'
+    implementation group: 'ai.djl.huggingface', name: 'tokenizers', version: '0.21.0'
 
-    if (project.hasProperty('includePytorchNativeDependencies')) {
-        implementation group: 'ai.djl.pytorch', name: 'pytorch-jni'
-        implementation group: 'ai.djl.pytorch', name: "pytorch-native-${project.pytorchFlavor}", classifier: "${project.platformClassifier}"
-    }
+//    if (project.hasProperty('includePytorchNativeDependencies')) {
+//        implementation group: 'ai.djl.pytorch', name: 'pytorch-jni'
+//        implementation group: 'ai.djl.pytorch', name: "pytorch-native-${project.pytorchFlavor}", classifier: "${project.platformClassifier}"
+//    }
 
     implementation("ai.djl.onnxruntime:onnxruntime-engine:0.21.0") {
         exclude group: "com.microsoft.onnxruntime", module: "onnxruntime"
