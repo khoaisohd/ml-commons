@@ -1,8 +1,7 @@
-package org.opensearch.ml.engine.algorithms.text_embedding;
+package org.opensearch.ml.engine.algorithms.remote;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
-import com.google.common.io.ByteStreams;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -12,13 +11,10 @@ import org.opensearch.common.regex.Regex;
 import org.opensearch.core.rest.RestStatus;
 
 import java.io.Closeable;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -26,18 +22,35 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_IGNO
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 
 /**
- * EmbeddedOciObjectStorageServer is in-memory mock server for unit test that needs
- * to call OCI object storage
+ * EmbeddedOcGenaiServer is in-memory mock server for unit test that needs
+ * to call OCI Genai
  */
 @Slf4j
-public class EmbeddedOciObjectStorageServer implements Closeable {
+public class EmbeddedOciGenaiServer implements Closeable {
     // Runs on ephemeral port
     private static final int PORT = 0;
     private static final String URL = "localhost";
+
+    private static final String SUCCESSFUL_RESPONSE_BODY =
+            "{\n" +
+            "    \"generatedTexts\": [\n" +
+            "        [\n" +
+            "            {\n" +
+            "                \"text\": \"answer\"\n" +
+            "            }\n" +
+            "        ]\n" +
+            "    ]\n" +
+            "}";
+
+    private static final String FAILED_RESPONSE_BODY = "{\n" +
+            "  \"code\" : \"NotAuthorizedOrNotFound\",\n" +
+            "  \"message\" : \"Authorization failed or requested resource not found.\"\n" +
+            "}";
+
     private final HttpServer server;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    public EmbeddedOciObjectStorageServer() throws IOException {
+    public EmbeddedOciGenaiServer() throws IOException {
         this.server = HttpServer.create(new InetSocketAddress(InetAddress.getByName(URL), PORT), 0);
         this.server.createContext("/", new OciHttpHandler());
     }
@@ -79,37 +92,23 @@ public class EmbeddedOciObjectStorageServer implements Closeable {
         }
 
         @Override
+        @SneakyThrows
         public void handle(HttpExchange exchange) {
             final String path = exchange.getRequestURI().getPath();
-            final String[] pathParams = path.split("/");
             try (exchange) {
-                if (Regex.simpleMatch("/n/*/b/*/o/*", path)
-                        && exchange.getRequestMethod().equals("GET")) {
-                    // GET object
-                    final String namespace = pathParams[2];
-                    final String bucket = pathParams[4];
-                    final String objectName =
-                            String.join("/", Arrays.copyOfRange(pathParams, 6, pathParams.length));
-                    getObject(namespace, bucket, objectName, exchange);
+                if (Regex.simpleMatch("/20231130/actions/generateText", path)
+                        && exchange.getRequestMethod().equals("POST")) {
+                    exchange.getResponseHeaders().add("Content-Type", "application/json");
+                    exchange.sendResponseHeaders(RestStatus.OK.getStatus(), 0);
+                    exchange.getResponseBody().write(SUCCESSFUL_RESPONSE_BODY.getBytes(StandardCharsets.UTF_8));
+                } else if (Regex.simpleMatch("/20231130/actions/wrongEndpoint", path)
+                        && exchange.getRequestMethod().equals("POST")) {
+                    exchange.getResponseHeaders().add("Content-Type", "application/json");
+                    exchange.sendResponseHeaders(RestStatus.NOT_FOUND.getStatus(), 0);
+                    exchange.getResponseBody().write(FAILED_RESPONSE_BODY.getBytes(StandardCharsets.UTF_8));
                 } else {
-                    throw new RuntimeException("Only getObject is supported");
+                    throw new RuntimeException(path + " endpoint is supported");
                 }
-            }
-        }
-
-        @SneakyThrows
-        private void getObject(
-                String namespaceName, String bucketName, String objectName, HttpExchange exchange) {
-            log.info(
-                    "Get object with namespaceName:{}, bucketName: {}, objectName: {}",
-                    namespaceName,
-                    bucketName,
-                    objectName);
-            exchange.getResponseHeaders().add("Content-Type", "application/json");
-            exchange.sendResponseHeaders(RestStatus.OK.getStatus(), 0);
-
-            try(InputStream inputStream = getClass().getResourceAsStream(objectName)) {
-                ByteStreams.copy(inputStream, exchange.getResponseBody());
             }
         }
     }
