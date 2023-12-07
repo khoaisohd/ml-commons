@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.ImmutableList;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -115,6 +116,42 @@ public class PromptUtilTests extends OpenSearchTestCase {
         contexts.add("context 2");
         String parameter = PromptUtil.buildSingleStringPrompt(systemPrompt, userInstructions, question, chatHistory, contexts);
         assertTrue(parameter.contains(systemPrompt));
+    }
+
+    public void testBuildOciGenaiPromptParameter() {
+        String question = "Who am I";
+        List<String> contexts = ImmutableList.of("context 1", "context 2");
+        List<Interaction> chatHistory = List
+                .of(
+                        Interaction
+                                .fromMap(
+                                        "convo1",
+                                        Map
+                                                .of(
+                                                        ConversationalIndexConstants.INTERACTIONS_CREATE_TIME_FIELD,
+                                                        Instant.now().toString(),
+                                                        ConversationalIndexConstants.INTERACTIONS_INPUT_FIELD,
+                                                        "message 1",
+                                                        ConversationalIndexConstants.INTERACTIONS_RESPONSE_FIELD,
+                                                        "answer1"
+                                                )
+                                ),
+                        Interaction
+                                .fromMap(
+                                        "convo1",
+                                        Map
+                                                .of(
+                                                        ConversationalIndexConstants.INTERACTIONS_CREATE_TIME_FIELD,
+                                                        Instant.now().toString(),
+                                                        ConversationalIndexConstants.INTERACTIONS_INPUT_FIELD,
+                                                        "message 2",
+                                                        ConversationalIndexConstants.INTERACTIONS_RESPONSE_FIELD,
+                                                        "answer2"
+                                                )
+                                )
+                );
+        String prompt = PromptUtil.buildSingleStringPromptForOciGenAi(question, chatHistory, contexts);
+        assertEquals("context 1\ncontext 2\nmessage 1\nanswer1\nmessage 2\nanswer2\nWho am I", prompt);
     }
 
     private boolean isJson(String Json) {
