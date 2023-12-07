@@ -13,8 +13,9 @@ public class ConnectorProtocols {
 
     public static final String HTTP = "http";
     public static final String AWS_SIGV4 = "aws_sigv4";
+    public static final String OCI_GENAI = "oci_genai";
 
-    public static final List<String> VALID_PROTOCOLS = Arrays.asList(AWS_SIGV4, HTTP);
+    public static final List<String> VALID_PROTOCOLS = Arrays.asList(AWS_SIGV4, HTTP, OCI_GENAI);
 
     public static void validateProtocol(String protocol) {
         if (protocol == null) {
