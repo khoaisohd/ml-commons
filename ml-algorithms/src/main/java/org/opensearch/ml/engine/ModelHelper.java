@@ -9,11 +9,7 @@ import ai.djl.training.util.DownloadUtils;
 import ai.djl.training.util.ProgressBar;
 import com.google.common.base.Preconditions;
 import com.google.gson.stream.JsonReader;
-import com.oracle.bmc.Region;
 import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
-import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
-import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider;
-import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.ObjectStorageClient;
 import com.oracle.bmc.objectstorage.requests.GetObjectRequest;
@@ -25,9 +21,10 @@ import org.opensearch.ml.common.model.MLModelConfig;
 import org.opensearch.ml.common.model.MLModelFormat;
 import org.opensearch.ml.common.model.TextEmbeddingModelConfig;
 import org.opensearch.ml.common.transport.register.MLRegisterModelInput;
+import org.opensearch.ml.common.oci.OciClientUtils;
+import org.opensearch.ml.engine.algorithms.oci.OciAuthProviderFactory;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -251,6 +248,8 @@ public class ModelHelper {
             final MLRegisterModelInput registerModelInput,
             final URI uri,
             final String targetFilePath) {
+        OciClientUtils.validateCredential(registerModelInput.getCredential());
+
         final String namespace = uri.getHost();
         // url path is expected to have format /{bucketName}/{objectName}
         final String[] parts = uri.getPath().split("/");
@@ -267,7 +266,7 @@ public class ModelHelper {
                 object);
 
         final BasicAuthenticationDetailsProvider authenticationDetails =
-                getAuthenticationDetailsProvider(registerModelInput);
+                OciAuthProviderFactory.buildAuthenticationDetailsProvider(registerModelInput.getCredential());
 
         try (final ObjectStorage objectStorage =
                      ObjectStorageClient
@@ -285,36 +284,6 @@ public class ModelHelper {
             Files.copy(inStream, destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception ex) {
             throw new RuntimeException("Failed to download file from object storage " + registerModelInput, ex);
-        }
-    }
-
-    private static BasicAuthenticationDetailsProvider getAuthenticationDetailsProvider(
-            final MLRegisterModelInput registerModelInput) {
-        final MLRegisterModelInput.OciClientAuthType ociClientAuthType = registerModelInput.getOciClientAuthType();
-        log.debug("Get auth details for OCI client auth type: {}", ociClientAuthType);
-
-        switch (ociClientAuthType) {
-            case RESOURCE_PRINCIPAL:
-                return ResourcePrincipalAuthenticationDetailsProvider.builder().build();
-            case INSTANCE_PRINCIPAL:
-                return InstancePrincipalsAuthenticationDetailsProvider.builder().build();
-            case USER_PRINCIPAL:
-                return SimpleAuthenticationDetailsProvider.builder()
-                        .tenantId(registerModelInput.getOciClientAuthTenantId())
-                        .userId(registerModelInput.getOciClientAuthUserId())
-                        .region(Region.fromRegionCodeOrId(registerModelInput.getOciClientAuthRegion()))
-                        .fingerprint(registerModelInput.getOciClientAuthFingerprint())
-                        .privateKeySupplier(
-                                () -> {
-                                    try {
-                                        return new FileInputStream(registerModelInput.getOciClientAuthPemfilepath());
-                                    } catch (Exception e) {
-                                        throw new RuntimeException(e);
-                                    }
-                                })
-                        .build();
-            default:
-                throw new IllegalArgumentException("OCI client auth type is not supported " + ociClientAuthType);
         }
     }
 
