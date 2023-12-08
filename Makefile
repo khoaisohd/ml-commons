@@ -12,14 +12,14 @@ install-java-17:
 	java -version
 
 master:
-	sh ./gradlew -Dbuild.snapshot=false -PincludePytorchNativeDependencies -PpytorchFlavor=cpu-precxx11 -PplatformClassifier=linux-x86_64 assemble
+	sh ./gradlew -Dbuild.snapshot=false -PincludePytorchNativeDependencies -PpytorchFlavor=cpu -PplatformClassifier=linux-x86_64 assemble
 
 PR-%:
-	sh ./gradlew -Dbuild.snapshot=true -PincludePytorchNativeDependencies -PpytorchFlavor=cpu-precxx11 -PplatformClassifier=linux-x86_64 assemble
+	sh ./gradlew -Dbuild.snapshot=true -PincludePytorchNativeDependencies -PpytorchFlavor=cpu -PplatformClassifier=linux-x86_64 assemble
 
 oracle-%:
 	# Production builds are made from oracle-x.y.z branches
-	sh ./gradlew -Dbuild.snapshot=false -PincludePytorchNativeDependencies -PpytorchFlavor=cpu-precxx11 -PplatformClassifier=linux-x86_64 assemble
+	sh ./gradlew -Dbuild.snapshot=false -PincludePytorchNativeDependencies -PpytorchFlavor=cpu -PplatformClassifier=linux-x86_64 assemble
 
 user-dev:
 	# Local ocibuild

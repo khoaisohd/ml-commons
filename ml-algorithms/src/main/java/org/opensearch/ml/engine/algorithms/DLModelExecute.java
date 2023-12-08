@@ -135,7 +135,7 @@ public abstract class DLModelExecute implements MLExecutable {
             AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
                 ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
                 try {
-                    System.setProperty("PYTORCH_PRECXX11", "true");
+                    System.setProperty("PYTORCH_PRECXX11", "false");
                     System.setProperty("DJL_CACHE_DIR", mlEngine.getMlCachePath().toAbsolutePath().toString());
                     // DJL will read "/usr/java/packages/lib" if don't set "java.library.path". That will throw
                     // access denied exception
