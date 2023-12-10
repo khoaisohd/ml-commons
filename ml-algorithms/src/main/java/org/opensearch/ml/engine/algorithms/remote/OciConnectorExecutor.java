@@ -68,7 +68,7 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
          try (Response response = client.target(connector.getPredictEndpoint(parameters))
                  .request(MediaType.APPLICATION_JSON)
                  .post(Entity.json(payload))) {
-             InputStream responseBody = (InputStream) response.getEntity();
+             final InputStream responseBody = (InputStream) response.getEntity();
              final int statusCode = response.getStatus();
              final StringBuilder jsonBody = new StringBuilder();
 
@@ -94,6 +94,8 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
         } catch (Throwable e) {
             log.error("Failed to execute predict in oci connector", e);
             throw new MLException("Failed to execute predict in oci connector", e);
-        }
+        } finally {
+             client.close();
+         }
     }
 }
