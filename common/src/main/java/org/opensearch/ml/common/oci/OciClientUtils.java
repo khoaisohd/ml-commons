@@ -12,12 +12,12 @@ import java.util.Map;
 @UtilityClass
 @Log4j2
 public class OciClientUtils {
-    public static final String AUTH_TYPE_FIELD = "auth_type";
-    public static final String TENANT_ID_FIELD = "tenant_id";
-    public static final String USER_ID_FIELD = "user_id";
-    public static final String FINGERPRINT_FIELD = "fingerprint";
-    public static final String PEMFILE_PATH_FIELD = "pemfile_path";
-    public static final String REGION_FIELD = "region";
+    public final String AUTH_TYPE_FIELD = "auth_type";
+    public final String TENANT_ID_FIELD = "tenant_id";
+    public final String USER_ID_FIELD = "user_id";
+    public final String FINGERPRINT_FIELD = "fingerprint";
+    public final String PEMFILE_PATH_FIELD = "pemfile_path";
+    public final String REGION_FIELD = "region";
 
     /**
      * Validate credential used to build OCI client
