@@ -181,30 +181,29 @@ public class PromptUtil {
     public static String buildSingleStringPromptForOciGenAi(
             final String question,
             final List<Interaction> chatHistory,
-            final List<String> contexts
-    ) {
-        final StringBuilder bldr = new StringBuilder();
+            final List<String> contexts) {
+        final StringBuilder prompt = new StringBuilder();
 
         for (String context: contexts) {
-            bldr.append(context);
-            bldr.append(NEWLINE);
-        }
-        if (!chatHistory.isEmpty()) {
-            List<Interaction> sortedInteractions =
-                    chatHistory
-                            .stream()
-                            .sorted(Comparator.comparing(Interaction::getCreateTime))
-                            .collect(Collectors.toList());
-            sortedInteractions.forEach(interaction -> {
-                bldr.append(interaction.getInput());
-                bldr.append(NEWLINE);
-                bldr.append(interaction.getResponse());
-                bldr.append(NEWLINE);
-            });
+            prompt.append(context);
+            prompt.append(NEWLINE);
         }
 
-        bldr.append(question);
-        return bldr.toString();
+        final List<Interaction> sortedInteractions =
+                chatHistory
+                        .stream()
+                        .sorted(Comparator.comparing(Interaction::getCreateTime))
+                        .collect(Collectors.toList());
+
+        sortedInteractions.forEach(interaction -> {
+            prompt.append(interaction.getInput());
+            prompt.append(NEWLINE);
+            prompt.append(interaction.getResponse());
+            prompt.append(NEWLINE);
+        });
+
+        prompt.append(question);
+        return prompt.toString();
     }
 
     public static String getPromptTemplate(String systemPrompt, String userInstructions) {
