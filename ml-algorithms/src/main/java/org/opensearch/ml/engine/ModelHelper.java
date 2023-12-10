@@ -248,8 +248,6 @@ public class ModelHelper {
             final MLRegisterModelInput registerModelInput,
             final URI uri,
             final String targetFilePath) {
-        OciClientUtils.validateCredential(registerModelInput.getCredential());
-
         final String namespace = uri.getHost();
         // url path is expected to have format /{bucketName}/{objectName}
         final String[] parts = uri.getPath().split("/");
@@ -266,7 +264,8 @@ public class ModelHelper {
                 object);
 
         final BasicAuthenticationDetailsProvider authenticationDetails =
-                OciAuthProviderFactory.buildAuthenticationDetailsProvider(registerModelInput.getCredential());
+                OciAuthProviderFactory.buildAuthenticationDetailsProvider(
+                        registerModelInput.getUrlConnectionParameters());
 
         try (final ObjectStorage objectStorage =
                      ObjectStorageClient

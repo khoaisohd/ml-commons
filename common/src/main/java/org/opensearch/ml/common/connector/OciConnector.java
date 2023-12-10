@@ -45,7 +45,7 @@ public class OciConnector extends HttpConnector {
     }
 
     private void validate() {
-        OciClientUtils.validateCredential(credential);
+        OciClientUtils.validateConnectionParameters(parameters);
     }
 
     @Override

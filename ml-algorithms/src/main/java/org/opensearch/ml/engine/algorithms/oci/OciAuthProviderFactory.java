@@ -20,15 +20,17 @@ import java.util.Map;
 public class OciAuthProviderFactory {
     /**
      *
-     * @param credentials the client credentials
+     * @param connectionParameters the client credentials
      * @return the authentication details provider which is used to call OCI services
      */
     public static BasicAuthenticationDetailsProvider buildAuthenticationDetailsProvider(
-            final Map<String, String> credentials) {
-        final String authTypeAsString = credentials.get(OciClientUtils.AUTH_TYPE_FIELD);
-        final OciClientAuthType authType = OciClientAuthType.from(authTypeAsString.toUpperCase(Locale.ROOT));
+            final Map<String, String> connectionParameters) {
+        OciClientUtils.validateConnectionParameters(connectionParameters);
 
-        log.debug("Get auth details for OCI client auth type: {}", authType);
+        final OciClientAuthType authType =
+                OciClientAuthType.from(
+                        connectionParameters.get(
+                                OciClientUtils.AUTH_TYPE_FIELD).toUpperCase(Locale.ROOT));
 
         switch (authType) {
             case RESOURCE_PRINCIPAL:
@@ -37,14 +39,14 @@ public class OciAuthProviderFactory {
                 return InstancePrincipalsAuthenticationDetailsProvider.builder().build();
             case USER_PRINCIPAL:
                 return SimpleAuthenticationDetailsProvider.builder()
-                        .tenantId(credentials.get(OciClientUtils.TENANT_ID_FIELD))
-                        .userId(credentials.get(OciClientUtils.USER_ID_FIELD))
-                        .region(Region.fromRegionCodeOrId(credentials.get(OciClientUtils.REGION_FIELD)))
-                        .fingerprint(credentials.get(OciClientUtils.FINGERPRINT_FIELD))
+                        .tenantId(connectionParameters.get(OciClientUtils.TENANT_ID_FIELD))
+                        .userId(connectionParameters.get(OciClientUtils.USER_ID_FIELD))
+                        .region(Region.fromRegionCodeOrId(connectionParameters.get(OciClientUtils.REGION_FIELD)))
+                        .fingerprint(connectionParameters.get(OciClientUtils.FINGERPRINT_FIELD))
                         .privateKeySupplier(
                                 () -> {
                                     try {
-                                        return new FileInputStream(credentials.get(OciClientUtils.PEMFILE_PATH_FIELD));
+                                        return new FileInputStream(connectionParameters.get(OciClientUtils.PEMFILE_PATH_FIELD));
                                     } catch (Exception e) {
                                         throw new RuntimeException(e);
                                     }

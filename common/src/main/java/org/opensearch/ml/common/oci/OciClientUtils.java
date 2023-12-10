@@ -3,6 +3,7 @@ package org.opensearch.ml.common.oci;
 import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
 
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -20,34 +21,39 @@ public class OciClientUtils {
 
     /**
      * Validate credential used to build OCI client
-     * @param credential the OCI Client credential
+     * @param connectionParameters the OCI Client credential
      */
-    public void validateCredential(final Map<String, String> credential) {
-        if (credential == null) {
+    public void validateConnectionParameters(final Map<String, String> connectionParameters) {
+        if (connectionParameters == null) {
             throw new IllegalArgumentException("Missing credential");
         }
-        if (!credential.containsKey(AUTH_TYPE_FIELD)) {
+        if (!connectionParameters.containsKey(AUTH_TYPE_FIELD)) {
             throw new IllegalArgumentException("Missing auth type");
         }
 
-        if (credential.get(AUTH_TYPE_FIELD).equals(OciClientAuthType.USER_PRINCIPAL.name())) {
-            if (!credential.containsKey(TENANT_ID_FIELD)) {
+        final OciClientAuthType authType =
+                OciClientAuthType.from(
+                        connectionParameters.get(
+                                OciClientUtils.AUTH_TYPE_FIELD).toUpperCase(Locale.ROOT));
+
+        if (authType == OciClientAuthType.USER_PRINCIPAL) {
+            if (!connectionParameters.containsKey(TENANT_ID_FIELD)) {
                 throw new IllegalArgumentException("Missing tenant id");
             }
 
-            if (!credential.containsKey(USER_ID_FIELD)) {
+            if (!connectionParameters.containsKey(USER_ID_FIELD)) {
                 throw new IllegalArgumentException("Missing user id");
             }
 
-            if (!credential.containsKey(FINGERPRINT_FIELD)) {
+            if (!connectionParameters.containsKey(FINGERPRINT_FIELD)) {
                 throw new IllegalArgumentException("Missing fingerprint");
             }
 
-            if (!credential.containsKey(PEMFILE_PATH_FIELD)) {
+            if (!connectionParameters.containsKey(PEMFILE_PATH_FIELD)) {
                 throw new IllegalArgumentException("Missing pemfile");
             }
 
-            if (!credential.containsKey(REGION_FIELD)) {
+            if (!connectionParameters.containsKey(REGION_FIELD)) {
                 throw new IllegalArgumentException("Missing region");
             }
         }

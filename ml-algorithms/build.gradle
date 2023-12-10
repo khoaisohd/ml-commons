@@ -72,7 +72,7 @@ dependencies {
     implementation group: 'org.json', name: 'json', version: '20230227'
 
     // OCI SDK to download file from OCI Object Storage
-    implementation("com.oracle.oci.sdk:oci-java-sdk-objectstorage:3.25.0") {
+    implementation("com.oracle.oci.sdk:oci-java-sdk-objectstorage:2.38.0") {
         // Exclude org.bouncycastle:bcprov-jdk15on to avoid conflict with bcprov-ext-jdk18on
         // that is provided from com.amazonaws:aws-encryption-sdk-java
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
@@ -92,25 +92,7 @@ dependencies {
         exclude group: 'com.google.guava', module: 'guava'
     }
 
-    implementation("com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey:3.25.0") {
-        // Exclude org.bouncycastle:bcprov-jdk15on to avoid conflict with bcprov-ext-jdk18on
-        // that is provided from com.amazonaws:aws-encryption-sdk-java
-        exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'
-        exclude group: 'org.bouncycastle', module: 'bcprov-jdk15to18'
-        // Exclude jackson and javax.annotation library since they are already provided by
-        // opensearch
-        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-core'
-        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-annotations'
-        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-databind'
-        exclude group: 'com.fasterxml.jackson.module', module: 'jackson-module-jaxb-annotations'
-        exclude group: 'com.fasterxml.jackson.datatype', module: 'jackson-datatype-jdk8'
-        exclude group: 'javax.annotation', module: 'javax.annotation-api'
-        exclude group: 'jakarta.annotation', module: 'jakarta.annotation-api'
-        // Exclude org.javassist:javassist and com.google.guava:guava since they are already
-        // provided in ml common plugin
-        exclude group: 'org.javassist', module: 'javassist'
-        exclude group: 'com.google.guava', module: 'guava'
-    }
+    implementation("com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.15.2")
     implementation("com.fasterxml.jackson.core:jackson-annotations:2.15.2")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
 }

@@ -20,6 +20,7 @@ import org.opensearch.ml.common.oci.OciClientAuthType;
 import org.opensearch.ml.common.oci.OciClientUtils;
 import org.opensearch.ml.common.output.model.ModelTensorOutput;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -54,7 +55,7 @@ public class OciConnectorExecutorTest {
                 .requestBody("{\"input\": \"${parameters.input}\"}")
                 .build();
 
-        final Map<String, String> credential =
+        final Map<String, String> parameters =
                 Map.of(
                         OciClientUtils.AUTH_TYPE_FIELD, OciClientAuthType.USER_PRINCIPAL.name(),
                         OciClientUtils.REGION_FIELD, "uk-london-1",
@@ -63,7 +64,6 @@ public class OciConnectorExecutorTest {
                         OciClientUtils.FINGERPRINT_FIELD, "3a:01:de:90:39:f4:b1:2f:02:75:77:c1:21:f2:20:24",
                         OciClientUtils.PEMFILE_PATH_FIELD, getClass().getClassLoader().getResource("org/opensearch/ml/engine/algorithms/text_embedding/fakeKey.pem").toURI().getPath());
 
-        final Map<String, String> parameters = Map.of();
         final Connector connector =
                 OciConnector
                         .ociConnectorBuilder()
@@ -71,8 +71,8 @@ public class OciConnectorExecutorTest {
                         .version("1")
                         .protocol("http")
                         .parameters(parameters)
-                        .credential(credential)
-                        .actions(Arrays.asList(predictAction)).build();
+                        .credential(Map.of())
+                        .actions(Collections.singletonList(predictAction)).build();
 
         final OciConnectorExecutor executor = new OciConnectorExecutor(connector);
 
@@ -121,7 +121,7 @@ public class OciConnectorExecutorTest {
                         .protocol("http")
                         .parameters(parameters)
                         .credential(credential)
-                        .actions(Arrays.asList(predictAction)).build();
+                        .actions(Collections.singletonList(predictAction)).build();
 
         final OciConnectorExecutor executor = new OciConnectorExecutor(connector);
 

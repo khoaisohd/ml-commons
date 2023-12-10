@@ -24,7 +24,7 @@ public class OciConnectorTest {
         OciConnector
                 .ociConnectorBuilder()
                 .protocol(ConnectorProtocols.OCI_GENAI)
-                .credential(new HashMap<>())
+                .parameters(new HashMap<>())
                 .build();
     }
 }

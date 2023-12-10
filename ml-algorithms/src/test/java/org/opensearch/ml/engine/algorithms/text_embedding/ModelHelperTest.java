@@ -118,11 +118,11 @@ public class ModelHelperTest {
 
     @Test
     public void testDownloadAndSplitFromOci() throws URISyntaxException {
-        MLRegisterModelInput modelInput =
+        final MLRegisterModelInput modelInput =
                 modelInputBuilder
                         .url("oci-os://idee4xpu3dvm/phuong-bucket/traced_small_model.zip")
                         .ociOsEndpoint(EmbeddedOciObjectStorageServer.BASE_URI)
-                        .credential(
+                        .urlConnectionParameters(
                                 Map.of(
                                         OciClientUtils.AUTH_TYPE_FIELD, OciClientAuthType.USER_PRINCIPAL.name(),
                                         OciClientUtils.REGION_FIELD, "uk-london-1",
@@ -132,7 +132,7 @@ public class ModelHelperTest {
                                         OciClientUtils.PEMFILE_PATH_FIELD, getClass().getResource("fakeKey.pem").toURI().getPath()))
                         .build();
         modelHelper.downloadAndSplit(modelInput, modelId, "1", FunctionName.TEXT_EMBEDDING, actionListener);
-        ArgumentCaptor<Map> argumentCaptor = ArgumentCaptor.forClass(Map.class);
+        final ArgumentCaptor<Map> argumentCaptor = ArgumentCaptor.forClass(Map.class);
         verify(actionListener).onResponse(argumentCaptor.capture());
         assertNotNull(argumentCaptor.getValue());
         assertNotEquals(0, argumentCaptor.getValue().size());
@@ -140,25 +140,25 @@ public class ModelHelperTest {
 
     @Test
     public void testDownloadAndSplitFromOci_whenMissingClientAuthType() {
-        MLRegisterModelInput modelInput =
+        final MLRegisterModelInput modelInput =
                 modelInputBuilder
                         .url("oci-os://idee4xpu3dvm/phuong-bucket/traced_small_model.zip")
-                        .credential(Collections.emptyMap())
+                        .urlConnectionParameters(Collections.emptyMap())
                         .ociOsEndpoint(EmbeddedOciObjectStorageServer.BASE_URI)
                         .build();
         modelHelper.downloadAndSplit(modelInput, modelId, "1", FunctionName.TEXT_EMBEDDING, actionListener);
-        ArgumentCaptor<Exception> argumentCaptor = ArgumentCaptor.forClass(Exception.class);
+        final ArgumentCaptor<Exception> argumentCaptor = ArgumentCaptor.forClass(Exception.class);
         verify(actionListener).onFailure(argumentCaptor.capture());
         assertEquals(IllegalArgumentException.class, argumentCaptor.getValue().getClass());
     }
 
     @Test
     public void testDownloadAndSplitFromOci_whenHavingInvalidUrl() throws URISyntaxException {
-        MLRegisterModelInput modelInput =
+        final MLRegisterModelInput modelInput =
                 modelInputBuilder
                         .url("oci-os://idee4xpu3dvm/traced_small_model.zip")
                         .ociOsEndpoint(EmbeddedOciObjectStorageServer.BASE_URI)
-                        .credential(
+                        .urlConnectionParameters(
                                 Map.of(
                                         OciClientUtils.AUTH_TYPE_FIELD, OciClientAuthType.USER_PRINCIPAL.name(),
                                         OciClientUtils.REGION_FIELD, "uk-london-1",
@@ -168,7 +168,7 @@ public class ModelHelperTest {
                                         OciClientUtils.PEMFILE_PATH_FIELD, getClass().getResource("fakeKey.pem").toURI().getPath()))
                         .build();
         modelHelper.downloadAndSplit(modelInput, modelId, "1", FunctionName.TEXT_EMBEDDING, actionListener);
-        ArgumentCaptor<Exception> argumentCaptor = ArgumentCaptor.forClass(Exception.class);
+        final ArgumentCaptor<Exception> argumentCaptor = ArgumentCaptor.forClass(Exception.class);
         verify(actionListener).onFailure(argumentCaptor.capture());
         assertEquals(IllegalArgumentException.class, argumentCaptor.getValue().getClass());
     }

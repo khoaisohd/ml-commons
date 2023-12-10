@@ -27,7 +27,7 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
  */
 @Slf4j
 public class EmbeddedOciGenaiServer implements Closeable {
-    public static final String BASE_URI = "http://localhost:8081/";
+    public static final String BASE_URI = "http://localhost:8081";
     /**
      * Hardcode PORT for now to make it simple. We should find the available port
      * programmatically instead

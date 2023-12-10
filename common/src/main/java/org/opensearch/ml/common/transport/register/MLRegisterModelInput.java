@@ -45,7 +45,7 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
     public static final String DESCRIPTION_FIELD = "description";
     public static final String VERSION_FIELD = "version";
     public static final String URL_FIELD = "url";
-    public static final String CREDENTIAL_FIELD = "credential";
+    public static final String URL_CONNECTION_PARAMETERS_FIELD = "url_connection_parameters";
     public static final String OCI_OS_ENDPOINT = "oci_os_endpoint";
     public static final String HASH_VALUE_FIELD = "model_content_hash_value";
     public static final String MODEL_FORMAT_FIELD = "model_format";
@@ -66,7 +66,7 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
     private String description;
     private String url;
     private String ociOsEndpoint;
-    private Map<String, String> credential;
+    private Map<String, String> urlConnectionParameters;
     private String ociClientAuthTenantId;
     private String ociClientAuthUserId;
     private String ociClientAuthRegion;
@@ -95,7 +95,7 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
                                 String description,
                                 String url,
                                 String ociOsEndpoint,
-                                Map<String, String> credential,
+                                Map<String, String> urlConnectionParameters,
                                 String ociClientAuthTenantId,
                                 String ociClientAuthUserId,
                                 String ociClientAuthRegion,
@@ -135,10 +135,10 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
         this.description = description;
         this.url = url;
         this.ociOsEndpoint = ociOsEndpoint;
-        if (credential == null) {
-            this.credential = Collections.emptyMap();
+        if (urlConnectionParameters == null) {
+            this.urlConnectionParameters = Collections.emptyMap();
         } else {
-            this.credential = credential;
+            this.urlConnectionParameters = urlConnectionParameters;
         }
         this.ociClientAuthTenantId = ociClientAuthTenantId;
         this.ociClientAuthUserId = ociClientAuthUserId;
@@ -167,7 +167,7 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
         this.description = in.readOptionalString();
         this.url = in.readOptionalString();
         this.ociOsEndpoint = in.readOptionalString();
-        this.credential = in.readMap().entrySet().stream()
+        this.urlConnectionParameters = in.readMap().entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> (String)e.getValue()));
         this.ociClientAuthTenantId = in.readOptionalString();
         this.ociClientAuthUserId = in.readOptionalString();
@@ -210,7 +210,7 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
         out.writeOptionalString(description);
         out.writeOptionalString(url);
         out.writeOptionalString(ociOsEndpoint);
-        out.writeMap((Map)credential);
+        out.writeMap((Map) urlConnectionParameters);
         out.writeOptionalString(ociClientAuthTenantId);
         out.writeOptionalString(ociClientAuthUserId);
         out.writeOptionalString(ociClientAuthRegion);
@@ -274,8 +274,8 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
         if (ociOsEndpoint != null) {
             builder.field(OCI_OS_ENDPOINT, ociOsEndpoint);
         }
-        if (credential != null) {
-            builder.field(CREDENTIAL_FIELD, credential);
+        if (urlConnectionParameters != null) {
+            builder.field(URL_CONNECTION_PARAMETERS_FIELD, urlConnectionParameters);
         }
         if (hashValue != null) {
             builder.field(HASH_VALUE_FIELD, hashValue);
@@ -317,7 +317,7 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
         String modelGroupId = null;
         String url = null;
         String ociOsEndpoint = null;
-        Map<String, String> credentials = null;
+        Map<String, String> urlConnectionParameters = null;
         String ociClientAuthTenantId = null;
         String ociClientAuthUserId = null;
         String ociClientAuthRegion = null;
@@ -349,8 +349,8 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
                 case URL_FIELD:
                     url = parser.text();
                     break;
-                case CREDENTIAL_FIELD:
-                    credentials = parser.map().entrySet().stream()
+                case URL_CONNECTION_PARAMETERS_FIELD:
+                    urlConnectionParameters = parser.map().entrySet().stream()
                             .collect(Collectors.toMap(Map.Entry::getKey, e -> (String)e.getValue()));
                     break;
                 case OCI_OS_ENDPOINT:
@@ -400,7 +400,7 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
                     break;
             }
         }
-        return new MLRegisterModelInput(functionName, modelName, modelGroupId, version, description, url,ociOsEndpoint, credentials, ociClientAuthTenantId, ociClientAuthUserId, ociClientAuthRegion, ociClientAuthFingerprint, ociClientAuthPemfilepath, hashValue, modelFormat, modelConfig, deployModel, modelNodeIds.toArray(new String[0]), connector, connectorId, backendRoles, addAllBackendRoles, accessMode, doesVersionCreateModelGroup);
+        return new MLRegisterModelInput(functionName, modelName, modelGroupId, version, description, url,ociOsEndpoint, urlConnectionParameters, ociClientAuthTenantId, ociClientAuthUserId, ociClientAuthRegion, ociClientAuthFingerprint, ociClientAuthPemfilepath, hashValue, modelFormat, modelConfig, deployModel, modelNodeIds.toArray(new String[0]), connector, connectorId, backendRoles, addAllBackendRoles, accessMode, doesVersionCreateModelGroup);
     }
 
     public static MLRegisterModelInput parse(XContentParser parser, boolean deployModel) throws IOException {
@@ -410,7 +410,7 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
         String version = null;
         String url = null;
         String ociOsEndpoint = null;
-        Map<String, String> credential = null;
+        Map<String, String> urlConnectionParameters = null;
         String ociClientAuthTenantId = null;
         String ociClientAuthUserId = null;
         String ociClientAuthRegion = null;
@@ -455,8 +455,8 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
                 case OCI_OS_ENDPOINT:
                     ociOsEndpoint = parser.text();
                     break;
-                case CREDENTIAL_FIELD:
-                    credential = parser.map().entrySet().stream()
+                case URL_CONNECTION_PARAMETERS_FIELD:
+                    urlConnectionParameters = parser.map().entrySet().stream()
                             .collect(Collectors.toMap(Map.Entry::getKey, e -> (String)e.getValue()));
                     break;
                 case CONNECTOR_FIELD:
@@ -500,6 +500,6 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
                     break;
             }
         }
-        return new MLRegisterModelInput(functionName, name, modelGroupId, version, description, url, ociOsEndpoint, credential, ociClientAuthTenantId, ociClientAuthUserId, ociClientAuthRegion, ociClientAuthFingerprint, ociClientAuthPemfilepath, hashValue, modelFormat, modelConfig, deployModel, modelNodeIds.toArray(new String[0]), connector, connectorId, backendRoles, addAllBackendRoles, accessMode, doesVersionCreateModelGroup);
+        return new MLRegisterModelInput(functionName, name, modelGroupId, version, description, url, ociOsEndpoint, urlConnectionParameters, ociClientAuthTenantId, ociClientAuthUserId, ociClientAuthRegion, ociClientAuthFingerprint, ociClientAuthPemfilepath, hashValue, modelFormat, modelConfig, deployModel, modelNodeIds.toArray(new String[0]), connector, connectorId, backendRoles, addAllBackendRoles, accessMode, doesVersionCreateModelGroup);
     }
 }
