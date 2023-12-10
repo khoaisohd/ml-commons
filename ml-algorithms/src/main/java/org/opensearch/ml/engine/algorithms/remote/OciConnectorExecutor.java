@@ -61,6 +61,8 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
           final RequestSigningFilter requestSigningFilter = RequestSigningFilter.fromAuthProvider(provider);
           final Client client = ClientBuilder
                   .newBuilder()
+                  // Ignore host name verifier until OCI Genai team fix the mismatch
+                  // between OCI Genai endpoint and its certificate cname
                   .hostnameVerifier((String hostname, SSLSession session) -> true)
                   .build()
                   .register(requestSigningFilter);
