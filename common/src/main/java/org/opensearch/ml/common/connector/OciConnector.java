@@ -52,7 +52,7 @@ public class OciConnector extends HttpConnector {
     public Connector cloneConnector() {
         try (BytesStreamOutput bytesStreamOutput = new BytesStreamOutput()){
             this.writeTo(bytesStreamOutput);
-            StreamInput streamInput = bytesStreamOutput.bytes().streamInput();
+            final StreamInput streamInput = bytesStreamOutput.bytes().streamInput();
             return new OciConnector(streamInput);
         } catch (IOException e) {
             throw new RuntimeException(e);
