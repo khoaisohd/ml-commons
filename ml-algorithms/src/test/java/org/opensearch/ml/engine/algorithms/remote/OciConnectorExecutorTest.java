@@ -19,7 +19,6 @@ import org.opensearch.ml.common.input.MLInput;
 import org.opensearch.ml.common.oci.OciClientAuthType;
 import org.opensearch.ml.common.oci.OciClientUtils;
 import org.opensearch.ml.common.output.model.ModelTensorOutput;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
