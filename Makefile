@@ -1,5 +1,5 @@
 install-java-17:
-	mkdir "${JAVA_HOME}"
+	mkdir -p "${JAVA_HOME}"
 	curl -fsSL -o /tmp/openjdk.tar "${OPENJDK_FILE}"
 	tar -C "${JAVA_HOME}" --strip-components 1 -xf /tmp/openjdk.tar
 	update-alternatives --install /usr/bin/java java "${JAVA_HOME}/bin/java" 1000
