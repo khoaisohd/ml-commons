@@ -11,7 +11,7 @@ master:
 	sh ./gradlew -Dbuild.snapshot=false -PincludePytorchNativeDependencies -PpytorchFlavor=${PYTORCH_FLAVOR} -PplatformClassifier=${PLATFORM_CLASSIFIER} assemble
 
 PR-%:
-	sh ./gradlew -Dbuild.snapshot=false -PincludePytorchNativeDependencies -PpytorchFlavor=${PYTORCH_FLAVOR} -PplatformClassifier=${PLATFORM_CLASSIFIER} assemble
+	sh ./gradlew -Dbuild.snapshot=true -PincludePytorchNativeDependencies -PpytorchFlavor=${PYTORCH_FLAVOR} -PplatformClassifier=${PLATFORM_CLASSIFIER} assemble
 
 oracle-%:
 	# Production builds are made from oracle-x.y.z branches
