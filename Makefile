@@ -1,7 +1,3 @@
-OPENJDK_VERSION=17.0.1
-OPENJDK_FILE="https://artifactory.oci.oraclecorp.com/build-service-generic-local/JDK/17/openjdk-${OPENJDK_VERSION}_linux-x64_bin.tar.gz"
-OPENJDK_HOME="/usr/lib/jvm/jdk-${OPENJDK_VERSION}"
-
 install-java-17:
 	mkdir "${OPENJDK_HOME}"
 	curl -fsSL -o /tmp/openjdk.tar "${OPENJDK_FILE}"
@@ -12,19 +8,19 @@ install-java-17:
 	java -version
 
 master:
-	sh ./gradlew -Dbuild.snapshot=false -PincludePytorchNativeDependencies -PpytorchFlavor=cpu -PplatformClassifier=linux-x86_64 assemble
+	sh ./gradlew -Dbuild.snapshot=false -PincludePytorchNativeDependencies -PpytorchFlavor=${PYTORCH_FLAVOR} -PplatformClassifier=${PLATFORM_CLASSIFIER} assemble
 
 PR-%:
-	sh ./gradlew -Dbuild.snapshot=true -PincludePytorchNativeDependencies -PpytorchFlavor=cpu -PplatformClassifier=linux-x86_64 assemble
+	sh ./gradlew -Dbuild.snapshot=false -PincludePytorchNativeDependencies -PpytorchFlavor=${PYTORCH_FLAVOR} -PplatformClassifier=${PLATFORM_CLASSIFIER} assemble
 
 oracle-%:
 	# Production builds are made from oracle-x.y.z branches
-	sh ./gradlew -Dbuild.snapshot=false -PincludePytorchNativeDependencies -PpytorchFlavor=cpu -PplatformClassifier=linux-x86_64 assemble
+	sh ./gradlew -Dbuild.snapshot=false -PincludePytorchNativeDependencies -PpytorchFlavor=${PYTORCH_FLAVOR} -PplatformClassifier=${PLATFORM_CLASSIFIER} assemble
 
 user-dev:
 	# Local ocibuild
 	sh ./gradlew -Dbuild.snapshot=true assemble
 
 output:
-	mkdir -p output/ml-commons-os-plugin
+	mkdir -p ${ARTIFACT_OUT_DIR}
 	cp plugin/build/distributions/*.zip output/ml-commons-os-plugin
