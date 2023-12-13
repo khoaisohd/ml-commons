@@ -129,7 +129,7 @@ public class ModelHelperTest {
                                         OciClientUtils.TENANT_ID_FIELD, "ocid1.tenancy.oc1..aaaaaaaagkbzgg6lpzrf47xzy4rjoxg4de6ncfiq2rncmjiujvy2hjgxvziq",
                                         OciClientUtils.USER_ID_FIELD, "ocid1.user.oc1..aaaaaaaajj7kdinuhkpct4rhsj7gfhyh5dja7ltcd5rrsylrozptssllagyq",
                                         OciClientUtils.FINGERPRINT_FIELD, "3a:01:de:90:39:f4:b1:2f:02:75:77:c1:21:f2:20:24",
-                                        OciClientUtils.PEMFILE_PATH_FIELD, getClass().getResource("fakeKey.pem").toURI().getPath()))
+                                        OciClientUtils.PEMFILE_PATH_FIELD, getClass().getClassLoader().getResource("org/opensearch/ml/engine/algorithms/oci/fakeKey.pem").toURI().getPath()))
                         .build();
         modelHelper.downloadAndSplit(modelInput, modelId, "1", FunctionName.TEXT_EMBEDDING, actionListener);
         final ArgumentCaptor<Map> argumentCaptor = ArgumentCaptor.forClass(Map.class);
@@ -165,7 +165,7 @@ public class ModelHelperTest {
                                         OciClientUtils.TENANT_ID_FIELD, "ocid1.tenancy.oc1..aaaaaaaagkbzgg6lpzrf47xzy4rjoxg4de6ncfiq2rncmjiujvy2hjgxvziq",
                                         OciClientUtils.USER_ID_FIELD, "ocid1.user.oc1..aaaaaaaajj7kdinuhkpct4rhsj7gfhyh5dja7ltcd5rrsylrozptssllagyq",
                                         OciClientUtils.FINGERPRINT_FIELD, "3a:01:de:90:39:f4:b1:2f:02:75:77:c1:21:f2:20:24",
-                                        OciClientUtils.PEMFILE_PATH_FIELD, getClass().getResource("fakeKey.pem").toURI().getPath()))
+                                        OciClientUtils.PEMFILE_PATH_FIELD, getClass().getClassLoader().getResource("org/opensearch/ml/engine/algorithms/oci/fakeKey.pem").toURI().getPath()))
                         .build();
         modelHelper.downloadAndSplit(modelInput, modelId, "1", FunctionName.TEXT_EMBEDDING, actionListener);
         final ArgumentCaptor<Exception> argumentCaptor = ArgumentCaptor.forClass(Exception.class);

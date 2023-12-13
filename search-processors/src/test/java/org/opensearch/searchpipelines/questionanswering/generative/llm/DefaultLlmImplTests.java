@@ -216,7 +216,7 @@ public class DefaultLlmImplTests extends OpenSearchTestCase {
     }
 
     public void testGetInputParametersForOciGenai() {
-        DefaultLlmImpl connector = new DefaultLlmImpl("model_id", client);
+        final DefaultLlmImpl connector = new DefaultLlmImpl("model_id", client);
 
         ChatCompletionInput input = new ChatCompletionInput(
                 "oci_genai/model",
