@@ -1,10 +1,10 @@
 install-java-17:
-	mkdir "${OPENJDK_HOME}"
+	mkdir "${JAVA_HOME}"
 	curl -fsSL -o /tmp/openjdk.tar "${OPENJDK_FILE}"
-	tar -C "${OPENJDK_HOME}" --strip-components 1 -xf /tmp/openjdk.tar
-	update-alternatives --install /usr/bin/java java "${OPENJDK_HOME}/bin/java" 1000
-	update-alternatives --install /usr/bin/javac javac "${OPENJDK_HOME}/bin/javac" 1000
-	update-alternatives --set java "${OPENJDK_HOME}/bin/java"
+	tar -C "${JAVA_HOME}" --strip-components 1 -xf /tmp/openjdk.tar
+	update-alternatives --install /usr/bin/java java "${JAVA_HOME}/bin/java" 1000
+	update-alternatives --install /usr/bin/javac javac "${JAVA_HOME}/bin/javac" 1000
+	update-alternatives --set java "${JAVA_HOME}/bin/java"
 	java -version
 
 master:
@@ -23,4 +23,4 @@ user-dev:
 
 output:
 	mkdir -p ${ARTIFACT_OUT_DIR}
-	cp plugin/build/distributions/*.zip output/ml-commons-os-plugin
+	cp plugin/build/distributions/*.zip ${ARTIFACT_OUT_DIR}
