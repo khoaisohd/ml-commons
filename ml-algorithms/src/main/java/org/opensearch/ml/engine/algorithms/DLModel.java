@@ -242,7 +242,8 @@ public abstract class DLModel implements Predictable {
             AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
                 ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
                 try {
-                    System.setProperty("PYTORCH_PRECXX11", "false");
+                    log.info("Pytorch Flavour {}", System.getProperty("gradle.pytorchFlavor"));
+                    System.setProperty("PYTORCH_PRECXX11", Boolean.toString(System.getProperty("gradle.pytorchFlavor").equals("cpu-precxx11")));
                     System.setProperty("DJL_CACHE_DIR", mlEngine.getMlCachePath().toAbsolutePath().toString());
                     // DJL will read "/usr/java/packages/lib" if don't set "java.library.path". That will throw
                     // access denied exception
