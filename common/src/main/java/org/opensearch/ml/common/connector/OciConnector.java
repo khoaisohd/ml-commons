@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import static org.opensearch.ml.common.connector.ConnectorProtocols.OCI_GENAI;
+import static org.opensearch.ml.common.connector.ConnectorProtocols.OCI_SIGV1;
 
 /**
  * Connector to OCI Genai
@@ -23,7 +23,7 @@ import static org.opensearch.ml.common.connector.ConnectorProtocols.OCI_GENAI;
 @Log4j2
 @NoArgsConstructor
 @EqualsAndHashCode
-@org.opensearch.ml.common.annotation.Connector(OCI_GENAI)
+@org.opensearch.ml.common.annotation.Connector(OCI_SIGV1)
 public class OciConnector extends HttpConnector {
     @Builder(builderMethodName = "ociConnectorBuilder")
     public OciConnector(String name, String description, String version, String protocol,

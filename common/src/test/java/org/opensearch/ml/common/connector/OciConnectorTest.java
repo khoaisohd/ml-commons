@@ -14,7 +14,7 @@ public class OciConnectorTest {
     public void constructor_NullCredential() {
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage("Missing credential");
-        OciConnector.ociConnectorBuilder().protocol(ConnectorProtocols.OCI_GENAI).build();
+        OciConnector.ociConnectorBuilder().protocol(ConnectorProtocols.OCI_SIGV1).build();
     }
 
     @Test
@@ -23,7 +23,7 @@ public class OciConnectorTest {
         exceptionRule.expectMessage("Missing auth type");
         OciConnector
                 .ociConnectorBuilder()
-                .protocol(ConnectorProtocols.OCI_GENAI)
+                .protocol(ConnectorProtocols.OCI_SIGV1)
                 .parameters(new HashMap<>())
                 .build();
     }

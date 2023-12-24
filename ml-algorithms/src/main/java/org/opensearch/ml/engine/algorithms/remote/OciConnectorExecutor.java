@@ -37,14 +37,14 @@ import java.util.List;
 import java.util.Map;
 
 import static org.opensearch.ml.common.CommonValue.REMOTE_SERVICE_ERROR;
-import static org.opensearch.ml.common.connector.ConnectorProtocols.OCI_GENAI;
+import static org.opensearch.ml.common.connector.ConnectorProtocols.OCI_SIGV1;
 import static org.opensearch.ml.engine.algorithms.remote.ConnectorUtils.processOutput;
 
 /**
  * OciConnectorExecutor is responsible to call remote model from OCI services
  */
 @Log4j2
-@ConnectorExecutor(OCI_GENAI)
+@ConnectorExecutor(OCI_SIGV1)
 public class OciConnectorExecutor implements RemoteConnectorExecutor{
 
     @Getter
