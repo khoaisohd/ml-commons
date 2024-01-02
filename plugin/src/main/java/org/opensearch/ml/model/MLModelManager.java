@@ -755,7 +755,7 @@ public class MLModelManager {
         throws PrivilegedActionException {
         String taskId = mlTask.getTaskId();
         List modelMetaList = modelHelper.downloadPrebuiltModelMetaList(taskId, registerModelInput);
-        log.info("Model list {} {}", modelMetaList.size(), modelMetaList.get(0).getClass());
+        log.info("DebugHelper Model list {}", modelMetaList.size());
         if (!modelHelper.isModelAllowed(registerModelInput, modelMetaList)) {
             throw new IllegalArgumentException("This model is not in the pre-trained model list, please check your parameters.");
         }
