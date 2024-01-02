@@ -391,6 +391,8 @@ public class MLModelManager {
      */
     public void registerMLModel(MLRegisterModelInput registerModelInput, MLTask mlTask) {
 
+        log.info("DebugHelper {} {}", mlTask.getModelId(), registerModelInput.getModelName());
+
         checkAndAddRunningTask(mlTask, maxRegisterTasksPerNode);
         try {
             mlStats.getStat(MLNodeLevelStat.ML_REQUEST_COUNT).increment();
@@ -402,6 +404,7 @@ public class MLModelManager {
             try (ThreadContext.StoredContext context = client.threadPool().getThreadContext().stashContext()) {
                 client.get(getModelGroupRequest, ActionListener.runBefore(ActionListener.wrap(modelGroup -> {
                     if (modelGroup.isExists()) {
+                        log.info("DebugHelper Model group found ???? {}", modelGroup.isExists());
                         Map<String, Object> modelGroupSourceMap = modelGroup.getSourceAsMap();
                         int updatedVersion = incrementLatestVersion(modelGroupSourceMap);
                         UpdateRequest updateModelGroupRequest = createUpdateModelGroupRequest(
@@ -422,6 +425,7 @@ public class MLModelManager {
                                 );
                         }
                     } else {
+                        log.info("DebugHelper Model group not found !!!");
                         log.error("Model group not found");
                         handleException(
                             registerModelInput.getFunctionName(),
@@ -431,12 +435,14 @@ public class MLModelManager {
                     }
                 }, e -> {
                     if (e instanceof IndexNotFoundException) {
+                        log.info("DebugHelper Model group index not found !!!");
                         handleException(
                             registerModelInput.getFunctionName(),
                             mlTask.getTaskId(),
                             new MLResourceNotFoundException("Failed to get model group")
                         );
                     } else {
+                        log.info("Failed to get model group !!!");
                         log.error("Failed to get model group", e);
                         handleException(registerModelInput.getFunctionName(), mlTask.getTaskId(), e);
                     }
@@ -445,6 +451,7 @@ public class MLModelManager {
                 log.error("Failed to register model", e);
                 handleException(registerModelInput.getFunctionName(), mlTask.getTaskId(), e);
             }
+            log.info("DebugHelper !!!! Exiting");
         } catch (Exception e) {
             handleException(registerModelInput.getFunctionName(), mlTask.getTaskId(), e);
         } finally {
@@ -748,6 +755,7 @@ public class MLModelManager {
         throws PrivilegedActionException {
         String taskId = mlTask.getTaskId();
         List modelMetaList = modelHelper.downloadPrebuiltModelMetaList(taskId, registerModelInput);
+        log.info("Model list {} {}", modelMetaList.size(), modelMetaList.get(0).getClass());
         if (!modelHelper.isModelAllowed(registerModelInput, modelMetaList)) {
             throw new IllegalArgumentException("This model is not in the pre-trained model list, please check your parameters.");
         }
