@@ -176,7 +176,7 @@ public class ModelHelper {
         return false;
     }
 
-    public List downloadPrebuiltModelMetaList(String taskId, MLRegisterModelInput registerModelInput) throws PrivilegedActionException {
+    public List downloadPrebuiltModelMetaList(String taskId, MLRegisterModelInput registerModelInput)  {
         String modelName = registerModelInput.getModelName();
         String version = registerModelInput.getVersion();
         log.info("DebugDebug !! I am here ! {} {}", modelName, version);
@@ -197,7 +197,10 @@ public class ModelHelper {
 
                 return config;
             });
-        } finally {
+        } catch (Exception e){
+            log.info("DebugDebug !! I am here - 3 {}", e.getMessage());
+        }
+        finally {
             deleteFileQuietly(mlEngine.getRegisterModelPath(taskId));
         }
     }
