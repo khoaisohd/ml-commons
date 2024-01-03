@@ -324,6 +324,7 @@ public class MLModelManager {
         MLTask mlTask,
         ActionListener<MLRegisterModelResponse> listener
     ) {
+        log.info("DebugHelper I am getting registered !!!!");
         checkAndAddRunningTask(mlTask, maxRegisterTasksPerNode);
         try (ThreadContext.StoredContext context = client.threadPool().getThreadContext().stashContext()) {
             mlStats.getStat(MLNodeLevelStat.ML_REQUEST_COUNT).increment();
@@ -391,7 +392,7 @@ public class MLModelManager {
      */
     public void registerMLModel(MLRegisterModelInput registerModelInput, MLTask mlTask) {
 
-        log.info("DebugHelper {} {}", mlTask.getModelId(), registerModelInput.getModelName());
+        log.info("DebugHelper {} {}", mlTask.getFunctionName().toString(), registerModelInput.getModelName());
 
         checkAndAddRunningTask(mlTask, maxRegisterTasksPerNode);
         try {
@@ -404,7 +405,7 @@ public class MLModelManager {
             try (ThreadContext.StoredContext context = client.threadPool().getThreadContext().stashContext()) {
                 client.get(getModelGroupRequest, ActionListener.runBefore(ActionListener.wrap(modelGroup -> {
                     if (modelGroup.isExists()) {
-                        log.info("DebugHelper Model group found ???? {}", modelGroup.isExists());
+                        log.info("DebugHelper Model group found ???? {}", modelGroup.getId());
                         Map<String, Object> modelGroupSourceMap = modelGroup.getSourceAsMap();
                         int updatedVersion = incrementLatestVersion(modelGroupSourceMap);
                         UpdateRequest updateModelGroupRequest = createUpdateModelGroupRequest(
@@ -420,6 +421,7 @@ public class MLModelManager {
                                     updateModelGroupRequest,
                                     ActionListener.wrap(r -> { uploadModel(registerModelInput, mlTask, updatedVersion + ""); }, e -> {
                                         log.error("Failed to update model group", e);
+                                        log.info("DebugHelper Update model group failed ???? {}", e.getMessage());
                                         handleException(registerModelInput.getFunctionName(), mlTask.getTaskId(), e);
                                     })
                                 );
