@@ -188,17 +188,20 @@ public class ModelHelper {
                 String modelMetaListUrl = mlEngine.getPrebuiltModelMetaListPath();
                 log.info("DebugDebug !! I am here - 2 ! {} ", modelMetaListUrl);
 
-                DownloadUtils.download(modelMetaListUrl, cacheFilePath, new ProgressBar());
+                downloadFromOciObjectStorage1(registerModelInput, cacheFilePath);
+                log.info("DebugDebug DebugDebug !!!!");
+                //DownloadUtils.download(modelMetaListUrl, cacheFilePath, new ProgressBar());
 
                 List<?> config = null;
                 try (JsonReader reader = new JsonReader(new FileReader(cacheFilePath))) {
                     config = gson.fromJson(reader, List.class);
                 }
+                log.info("DebugDebug !! I am here -3 {}", config);
 
                 return config;
             });
         } catch (Exception e){
-            log.info("DebugDebug !! I am here - 3 ! {} ", e.getMessage());
+            log.info("DebugDebug !! I am here - 4 ! {} ", e);
         }
         finally {
             deleteFileQuietly(mlEngine.getRegisterModelPath(taskId));
@@ -290,6 +293,35 @@ public class ModelHelper {
                              .namespaceName(namespace)
                              .bucketName(bucket)
                              .objectName(object)
+                             .build()).getInputStream()) {
+            final File destinationFile = new File(targetFilePath);
+            FileUtils.forceMkdir(destinationFile.getParentFile());
+            Files.copy(inStream, destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to download file from object storage " + registerModelInput, ex);
+        }
+    }
+
+
+    private void downloadFromOciObjectStorage1(
+            final MLRegisterModelInput registerModelInput,
+            final String targetFilePath) {
+
+        final BasicAuthenticationDetailsProvider authenticationDetails =
+                getAuthenticationDetailsProvider(registerModelInput);
+
+        log.info("Debug Downloading part");
+
+        try (final ObjectStorage objectStorage =
+                     ObjectStorageClient
+                             .builder()
+                             .endpoint("https://objectstorage.uk-london-1.oraclecloud.com")
+                             .build(authenticationDetails);
+             final InputStream inStream = objectStorage.getObject(
+                     GetObjectRequest.builder()
+                             .namespaceName("idee4xpu3dvm")
+                             .bucketName("PretrainedModel")
+                             .objectName("pre_trained_models.json")
                              .build()).getInputStream()) {
             final File destinationFile = new File(targetFilePath);
             FileUtils.forceMkdir(destinationFile.getParentFile());
