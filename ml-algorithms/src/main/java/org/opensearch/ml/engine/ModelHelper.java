@@ -198,11 +198,13 @@ public class ModelHelper {
                 return config;
             });
         } catch (Exception e){
-            log.info("DebugDebug !! I am here - 3 {}", e.getMessage());
+            log.info("DebugDebug !! I am here - 3 ! {} ", e.getMessage());
         }
         finally {
             deleteFileQuietly(mlEngine.getRegisterModelPath(taskId));
         }
+        return null;
+
     }
 
     /**
