@@ -70,6 +70,7 @@ public class ModelHelper {
     }
 
     public void downloadPrebuiltModelConfig(String taskId, MLRegisterModelInput registerModelInput, ActionListener<MLRegisterModelInput> listener) {
+        log.info("DebugDebug downloadPrebuiltModelConfig {}", taskId);
         String modelName = registerModelInput.getModelName();
         String version = registerModelInput.getVersion();
         MLModelFormat modelFormat = registerModelInput.getModelFormat();
@@ -80,10 +81,12 @@ public class ModelHelper {
             AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
 
                 Path registerModelPath = mlEngine.getRegisterModelPath(taskId, modelName, version);
+                log.info("DebugDebug 2 {}", registerModelPath);
                 String configCacheFilePath = registerModelPath.resolve("config.json").toString();
 
                 String configFileUrl = mlEngine.getPrebuiltModelConfigPath(modelName, version, modelFormat);
                 String modelZipFileUrl = mlEngine.getPrebuiltModelPath(modelName, version, modelFormat);
+                log.info("DebugDebug 3 {} {}", configFileUrl, modelZipFileUrl);
                 DownloadUtils.download(configFileUrl, configCacheFilePath, new ProgressBar());
 
                 Map<?, ?> config = null;
@@ -176,12 +179,15 @@ public class ModelHelper {
     public List downloadPrebuiltModelMetaList(String taskId, MLRegisterModelInput registerModelInput) throws PrivilegedActionException {
         String modelName = registerModelInput.getModelName();
         String version = registerModelInput.getVersion();
+        log.info("DebugDebug !! I am here ! {} {}", modelName, version);
         try {
             return AccessController.doPrivileged((PrivilegedExceptionAction<List>) () -> {
 
                 Path registerModelPath = mlEngine.getRegisterModelPath(taskId, modelName, version);
                 String cacheFilePath = registerModelPath.resolve("model_meta_list.json").toString();
                 String modelMetaListUrl = mlEngine.getPrebuiltModelMetaListPath();
+                log.info("DebugDebug !! I am here - 2 ! {} ", modelMetaListUrl);
+
                 DownloadUtils.download(modelMetaListUrl, cacheFilePath, new ProgressBar());
 
                 List<?> config = null;
