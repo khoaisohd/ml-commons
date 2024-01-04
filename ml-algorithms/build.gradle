@@ -51,6 +51,7 @@ dependencies {
 
     implementation("ai.djl.onnxruntime:onnxruntime-engine:0.25.0") {
         exclude group: "com.microsoft.onnxruntime", module: "onnxruntime"
+        exclude group: "com.microsoft.onnxruntime", module: "onnxruntime_gpu"
     }
     def os = DefaultNativePlatform.currentOperatingSystem
     //mac doesn't support GPU
