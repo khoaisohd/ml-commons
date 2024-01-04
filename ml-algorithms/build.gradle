@@ -49,7 +49,7 @@ dependencies {
         implementation group: 'ai.djl.pytorch', name: "pytorch-native-${project.pytorchFlavor}", classifier: "${project.platformClassifier}"
     }
 
-    implementation("ai.djl.onnxruntime:onnxruntime-engine:0.21.0") {
+    implementation("ai.djl.onnxruntime:onnxruntime-engine:0.25.0") {
         exclude group: "com.microsoft.onnxruntime", module: "onnxruntime"
     }
     def os = DefaultNativePlatform.currentOperatingSystem
