@@ -235,7 +235,9 @@ public class ModelHelper {
                 if (OCI_OS_SCHEME.equals(uri.getScheme())) {
                     downloadFromOciObjectStorage(registerModelInput, uri, modelPath);
                 } else {
-                    DownloadUtils.download(url, modelPath, new ProgressBar());
+                    //DownloadUtils.download(url, modelPath, new ProgressBar());
+                    log.info("Debug ! I am here ");
+                    downloadFromOciObjectStorage1( modelPath, "huggingface/sentence-transformers/all-distilroberta-v1/1.0.1/torch_script/sentence-transformers_all-distilroberta-v1-1.0.1-torch_script.zip");
                 }
                 verifyModelZipFile(modelFormat, modelPath, modelName, functionName);
                 String hash = calculateFileHash(modelZipFile);
