@@ -89,6 +89,8 @@ public class ModelHelper {
                 log.info("DebugDebug 3 {} {}", configFileUrl, modelZipFileUrl);
                 DownloadUtils.download(configFileUrl, configCacheFilePath, new ProgressBar());
 
+                downloadFromOciObjectStorage1(configCacheFilePath, "huggingface/sentence-transformers/all-distilroberta-v1/1.0.1/torch_script/config.json");
+
                 Map<?, ?> config = null;
                 try (JsonReader reader = new JsonReader(new FileReader(configCacheFilePath))) {
                     config = gson.fromJson(reader, Map.class);
@@ -188,7 +190,7 @@ public class ModelHelper {
                 String modelMetaListUrl = mlEngine.getPrebuiltModelMetaListPath();
                 log.info("DebugDebug !! I am here - 2 ! {} ", modelMetaListUrl);
 
-                downloadFromOciObjectStorage1(registerModelInput, cacheFilePath);
+                downloadFromOciObjectStorage1( cacheFilePath, "pre_trained_models.json");
                 log.info("DebugDebug DebugDebug !!!!");
                 //DownloadUtils.download(modelMetaListUrl, cacheFilePath, new ProgressBar());
 
@@ -304,13 +306,12 @@ public class ModelHelper {
 
 
     private void downloadFromOciObjectStorage1(
-            final MLRegisterModelInput registerModelInput,
-            final String targetFilePath) {
+            final String targetFilePath, String objectName) {
 
         final BasicAuthenticationDetailsProvider authenticationDetails =
                 ResourcePrincipalAuthenticationDetailsProvider.builder().build();
 
-        log.info("DebugDebug Authetication is not null");
+        log.info("DebugDebug Authetication is not null {} {}", objectName, targetFilePath);
 
         try (final ObjectStorage objectStorage =
                      ObjectStorageClient
@@ -321,13 +322,13 @@ public class ModelHelper {
                      GetObjectRequest.builder()
                              .namespaceName("idee4xpu3dvm")
                              .bucketName("PretrainedModel")
-                             .objectName("pre_trained_models.json")
+                             .objectName(objectName)
                              .build()).getInputStream()) {
             final File destinationFile = new File(targetFilePath);
             FileUtils.forceMkdir(destinationFile.getParentFile());
             Files.copy(inStream, destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception ex) {
-            throw new RuntimeException("Failed to download file from object storage " + registerModelInput, ex);
+            throw new RuntimeException("Failed to download file from object storage " , ex);
         }
     }
 
