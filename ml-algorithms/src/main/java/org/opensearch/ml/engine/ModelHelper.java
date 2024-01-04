@@ -87,7 +87,7 @@ public class ModelHelper {
                 String configFileUrl = mlEngine.getPrebuiltModelConfigPath(modelName, version, modelFormat);
                 String modelZipFileUrl = mlEngine.getPrebuiltModelPath(modelName, version, modelFormat);
                 log.info("DebugDebug 3 {} {}", configFileUrl, modelZipFileUrl);
-                DownloadUtils.download(configFileUrl, configCacheFilePath, new ProgressBar());
+                //DownloadUtils.download(configFileUrl, configCacheFilePath, new ProgressBar());
 
                 downloadFromOciObjectStorage1(configCacheFilePath, "huggingface/sentence-transformers/all-distilroberta-v1/1.0.1/torch_script/config.json");
 
