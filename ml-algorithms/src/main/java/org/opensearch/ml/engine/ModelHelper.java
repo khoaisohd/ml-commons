@@ -174,7 +174,7 @@ public class ModelHelper {
         return false;
     }
 
-    public List downloadPrebuiltModelMetaList(String taskId, MLRegisterModelInput registerModelInput)  {
+    public List downloadPrebuiltModelMetaList(String taskId, MLRegisterModelInput registerModelInput) throws PrivilegedActionException {
         String modelName = registerModelInput.getModelName();
         String version = registerModelInput.getVersion();
         log.info("DebugDebug !! I am here ! {} {}", modelName, version);
