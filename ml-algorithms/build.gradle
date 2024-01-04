@@ -61,7 +61,7 @@ dependencies {
         }
     } else {
         dependencies {
-            implementation "com.microsoft.onnxruntime:onnxruntime_gpu:1.14.0"
+            implementation "com.microsoft.onnxruntime:onnxruntime_gpu:1.16.0"
         }
     }
 
