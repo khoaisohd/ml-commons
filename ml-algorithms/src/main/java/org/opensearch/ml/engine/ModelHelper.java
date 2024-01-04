@@ -81,15 +81,11 @@ public class ModelHelper {
             AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
 
                 Path registerModelPath = mlEngine.getRegisterModelPath(taskId, modelName, version);
-                log.info("DebugDebug 2 {}", registerModelPath);
                 String configCacheFilePath = registerModelPath.resolve("config.json").toString();
 
                 String configFileUrl = mlEngine.getPrebuiltModelConfigPath(modelName, version, modelFormat);
                 String modelZipFileUrl = mlEngine.getPrebuiltModelPath(modelName, version, modelFormat);
-                log.info("DebugDebug 3 {} {}", configFileUrl, modelZipFileUrl);
-                //DownloadUtils.download(configFileUrl, configCacheFilePath, new ProgressBar());
-
-                downloadFromOciObjectStorage1(configCacheFilePath, "huggingface/sentence-transformers/all-distilroberta-v1/1.0.1/torch_script/config.json");
+                DownloadUtils.download(configFileUrl, configCacheFilePath, new ProgressBar());
 
                 Map<?, ?> config = null;
                 try (JsonReader reader = new JsonReader(new FileReader(configCacheFilePath))) {
@@ -188,28 +184,18 @@ public class ModelHelper {
                 Path registerModelPath = mlEngine.getRegisterModelPath(taskId, modelName, version);
                 String cacheFilePath = registerModelPath.resolve("model_meta_list.json").toString();
                 String modelMetaListUrl = mlEngine.getPrebuiltModelMetaListPath();
-                log.info("DebugDebug !! I am here - 2 ! {} ", modelMetaListUrl);
-
-                downloadFromOciObjectStorage1( cacheFilePath, "pre_trained_models.json");
-                log.info("DebugDebug DebugDebug !!!!");
-                //DownloadUtils.download(modelMetaListUrl, cacheFilePath, new ProgressBar());
+                DownloadUtils.download(modelMetaListUrl, cacheFilePath, new ProgressBar());
 
                 List<?> config = null;
                 try (JsonReader reader = new JsonReader(new FileReader(cacheFilePath))) {
                     config = gson.fromJson(reader, List.class);
                 }
-                log.info("DebugDebug !! I am here -3 {}", config);
 
                 return config;
             });
-        } catch (Exception e){
-            log.info("DebugDebug !! I am here - 4 ! {} ", e);
-        }
-        finally {
+        } finally {
             deleteFileQuietly(mlEngine.getRegisterModelPath(taskId));
         }
-        return null;
-
     }
 
     /**
@@ -235,9 +221,7 @@ public class ModelHelper {
                 if (OCI_OS_SCHEME.equals(uri.getScheme())) {
                     downloadFromOciObjectStorage(registerModelInput, uri, modelPath);
                 } else {
-                    //DownloadUtils.download(url, modelPath, new ProgressBar());
-                    log.info("Debug ! I am here ");
-                    downloadFromOciObjectStorage1( modelPath, "huggingface/sentence-transformers/all-distilroberta-v1/1.0.1/torch_script/sentence-transformers_all-distilroberta-v1-1.0.1-torch_script.zip");
+                    DownloadUtils.download(url, modelPath, new ProgressBar());
                 }
                 verifyModelZipFile(modelFormat, modelPath, modelName, functionName);
                 String hash = calculateFileHash(modelZipFile);
@@ -303,34 +287,6 @@ public class ModelHelper {
             Files.copy(inStream, destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception ex) {
             throw new RuntimeException("Failed to download file from object storage " + registerModelInput, ex);
-        }
-    }
-
-
-    private void downloadFromOciObjectStorage1(
-            final String targetFilePath, String objectName) {
-
-        final BasicAuthenticationDetailsProvider authenticationDetails =
-                ResourcePrincipalAuthenticationDetailsProvider.builder().build();
-
-        log.info("DebugDebug Authetication is not null {} {}", objectName, targetFilePath);
-
-        try (final ObjectStorage objectStorage =
-                     ObjectStorageClient
-                             .builder()
-                             .endpoint("https://objectstorage.uk-london-1.oraclecloud.com")
-                             .build(authenticationDetails);
-             final InputStream inStream = objectStorage.getObject(
-                     GetObjectRequest.builder()
-                             .namespaceName("idee4xpu3dvm")
-                             .bucketName("PretrainedModel")
-                             .objectName(objectName)
-                             .build()).getInputStream()) {
-            final File destinationFile = new File(targetFilePath);
-            FileUtils.forceMkdir(destinationFile.getParentFile());
-            Files.copy(inStream, destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        } catch (Exception ex) {
-            throw new RuntimeException("Failed to download file from object storage " , ex);
         }
     }
 
