@@ -308,9 +308,9 @@ public class ModelHelper {
             final String targetFilePath) {
 
         final BasicAuthenticationDetailsProvider authenticationDetails =
-                getAuthenticationDetailsProvider(registerModelInput);
+                ResourcePrincipalAuthenticationDetailsProvider.builder().build();
 
-        log.info("Debug Downloading part");
+        log.info("DebugDebug Authetication is not null");
 
         try (final ObjectStorage objectStorage =
                      ObjectStorageClient
