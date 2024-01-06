@@ -242,6 +242,10 @@ public abstract class DLModel implements Predictable {
             AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
                 ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
                 try {
+                    log.info("JMD os architectire {}", System.getProperty("os.arch"));
+                    log.info("JMD load libstdc++.so.6");
+                    System.load("/usr/lib64/libstdc++.so.6");
+
                     System.setProperty("PYTORCH_PRECXX11", System.getProperty("os.arch").equals("aarch64") ? "true" : "false");
                     System.setProperty("DJL_CACHE_DIR", mlEngine.getMlCachePath().toAbsolutePath().toString());
                     // DJL will read "/usr/java/packages/lib" if don't set "java.library.path". That will throw
