@@ -7,6 +7,7 @@ import ai.djl.inference.Predictor;
 import ai.djl.repository.zoo.Criteria;
 import ai.djl.repository.zoo.ZooModel;
 import ai.djl.translate.Translator;
+import com.sun.jna.NativeLibrary;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
 import org.opensearch.ml.common.FunctionName;
@@ -135,13 +136,13 @@ public abstract class DLModelExecute implements MLExecutable {
             AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
                 ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
                 try {
+                    log.info("JMD os architectire {}", System.getProperty("os.arch"));
                     System.setProperty("PYTORCH_PRECXX11", System.getProperty("os.arch").equals("aarch64") ? "true" : "false");
                     System.setProperty("DJL_CACHE_DIR", mlEngine.getMlCachePath().toAbsolutePath().toString());
                     // DJL will read "/usr/java/packages/lib" if don't set "java.library.path". That will throw
                     // access denied exception
-                    if(System.getProperty("os.arch").equals("aarch64")){
-                        System.load("/usr/lib64/libstdc++.so.6");
-                    }
+                    log.info("JMD load libstdc++.so.6");
+                    System.load("/usr/lib64/libstdc++.so.6");
                     System.setProperty("java.library.path", mlEngine.getMlCachePath().toAbsolutePath().toString());
                     System.setProperty("ai.djl.pytorch.num_interop_threads", "1");
                     System.setProperty("ai.djl.pytorch.num_threads", "1");
