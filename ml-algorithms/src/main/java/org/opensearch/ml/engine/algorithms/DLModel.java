@@ -315,6 +315,7 @@ public abstract class DLModel implements Predictable {
 
     /**
      * Parse model output to model tensor output and apply result filter.
+     *
      * @param output model output
      * @param resultFilter result filter
      * @return model tensor output
