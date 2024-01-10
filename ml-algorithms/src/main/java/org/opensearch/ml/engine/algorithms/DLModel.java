@@ -37,9 +37,7 @@ import org.opensearch.ml.engine.utils.ZipUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -241,24 +239,23 @@ public abstract class DLModel implements Predictable {
             AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
                 ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
                 try {
-                    final String engine_cache_dir = mlEngine.getMlCachePath().toAbsolutePath().toString();
-                    if (Files.exists(Paths.get(engine_cache_dir).resolve("libstdc++.so.6"))) {
-                        String libstd = System.getenv("LIBSTDCXX_LIBRARY_PATH");
-                        if (libstd != null) {
-                            try {
-                                log.info("Loading libstdc++.so.6 from: {}", libstd);
-                                System.load(libstd);
-                            } catch (UnsatisfiedLinkError e) {
-                                log.warn("Failed Loading libstdc++.so.6 from: {}. Falling back to default.", libstd);
-                            }
+
+                    // If we want to load our own libstdc++.so.6 do it before djl does to files from cache
+                    String libstd = System.getenv("LIBSTDCXX_LIBRARY_PATH");
+                    if (libstd != null) {
+                        try {
+                            log.info("Loading libstdc++.so.6 from: {}", libstd);
+                            System.load(libstd);
+                        } catch (UnsatisfiedLinkError e) {
+                            log.warn("Failed Loading libstdc++.so.6 from: {}. Falling back to default.", libstd);
                         }
                     }
 
                     System.setProperty("PYTORCH_PRECXX11", System.getProperty("os.arch").equals("aarch64") ? "true" : "false");
-                    System.setProperty("DJL_CACHE_DIR", engine_cache_dir);
+                    System.setProperty("DJL_CACHE_DIR", mlEngine.getMlCachePath().toAbsolutePath().toString());
                     // DJL will read "/usr/java/packages/lib" if don't set "java.library.path". That will throw
                     // access denied exception
-                    System.setProperty("java.library.path", engine_cache_dir);
+                    System.setProperty("java.library.path", mlEngine.getMlCachePath().toAbsolutePath().toString());
                     System.setProperty("ai.djl.pytorch.num_interop_threads", "1");
                     System.setProperty("ai.djl.pytorch.num_threads", "1");
                     Thread.currentThread().setContextClassLoader(ai.djl.Model.class.getClassLoader());
