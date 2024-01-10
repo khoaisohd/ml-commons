@@ -162,7 +162,10 @@ public abstract class DLModel implements Predictable {
 
     @Override
     public boolean isModelReady() {
-        return predictors != null && modelHelper != null && modelId != null;
+        if (predictors == null || modelHelper == null || modelId == null) {
+            return false;
+        }
+        return true;
     }
 
     public abstract Translator<Input, Output> getTranslator(String engine, MLModelConfig modelConfig);
