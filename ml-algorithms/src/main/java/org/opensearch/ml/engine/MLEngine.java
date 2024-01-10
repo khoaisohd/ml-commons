@@ -49,6 +49,9 @@ public class MLEngine {
         this.encryptor = encryptor;
 
         //TODO - This is a hack and can be fixed when djl.ai build has up to date logic
+        // User might want to load their own libstdc++.so.6 instead of one provided by djl
+        // Refer: https://github.com/deepjavalibrary/djl/pull/2929
+        // Refer: https://github.com/deepjavalibrary/djl/issues/2919
         conditionalLoadCustomLibStdc();
     }
 
