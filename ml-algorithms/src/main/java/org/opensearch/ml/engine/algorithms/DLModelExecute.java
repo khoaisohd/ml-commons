@@ -136,12 +136,20 @@ public abstract class DLModelExecute implements MLExecutable {
             AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
                 ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
                 try {
-                    log.info("JMD os architectire {}", System.getProperty("os.arch"));
+                    // If we want to load our own libstdc++.so.6 do it before djl does to files from cache
+                    String libstd = System.getenv("LIBSTDCXX_LIBRARY_PATH");
+                    if (libstd != null) {
+                        try {
+                            log.info("Loading libstdc++.so.6 from: {}", libstd);
+                            System.load(libstd);
+                        } catch (UnsatisfiedLinkError e) {
+                            log.warn("Failed Loading libstdc++.so.6 from: {}. Falling back to default.", libstd);
+                        }
+                    }
                     System.setProperty("PYTORCH_PRECXX11", System.getProperty("os.arch").equals("aarch64") ? "true" : "false");
                     System.setProperty("DJL_CACHE_DIR", mlEngine.getMlCachePath().toAbsolutePath().toString());
                     // DJL will read "/usr/java/packages/lib" if don't set "java.library.path". That will throw
                     // access denied exception
-                    log.info("JMD load libstdc++.so.6");
                     System.load("/usr/lib64/libstdc++.so.6");
                     System.setProperty("java.library.path", mlEngine.getMlCachePath().toAbsolutePath().toString());
                     System.setProperty("ai.djl.pytorch.num_interop_threads", "1");

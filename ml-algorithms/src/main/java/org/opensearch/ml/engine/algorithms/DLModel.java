@@ -116,9 +116,9 @@ public abstract class DLModel implements Predictable {
                 throw new IllegalArgumentException("unsupported engine");
         }
 
-        File modelZipFile = (File) params.get(MODEL_ZIP_FILE);
-        modelHelper = (ModelHelper) params.get(MODEL_HELPER);
-        mlEngine = (MLEngine) params.get(ML_ENGINE);
+        File modelZipFile = (File)params.get(MODEL_ZIP_FILE);
+        modelHelper = (ModelHelper)params.get(MODEL_HELPER);
+        mlEngine = (MLEngine)params.get(ML_ENGINE);
         if (modelZipFile == null) {
             throw new IllegalArgumentException("model file is null");
         }
