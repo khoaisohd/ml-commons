@@ -37,7 +37,9 @@ import org.opensearch.ml.engine.utils.ZipUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -116,9 +118,9 @@ public abstract class DLModel implements Predictable {
                 throw new IllegalArgumentException("unsupported engine");
         }
 
-        File modelZipFile = (File)params.get(MODEL_ZIP_FILE);
-        modelHelper = (ModelHelper)params.get(MODEL_HELPER);
-        mlEngine = (MLEngine)params.get(ML_ENGINE);
+        File modelZipFile = (File) params.get(MODEL_ZIP_FILE);
+        modelHelper = (ModelHelper) params.get(MODEL_HELPER);
+        mlEngine = (MLEngine) params.get(ML_ENGINE);
         if (modelZipFile == null) {
             throw new IllegalArgumentException("model file is null");
         }
@@ -162,10 +164,7 @@ public abstract class DLModel implements Predictable {
 
     @Override
     public boolean isModelReady() {
-        if (predictors == null || modelHelper == null || modelId == null) {
-            return false;
-        }
-        return true;
+        return predictors != null && modelHelper != null && modelId != null;
     }
 
     public abstract Translator<Input, Output> getTranslator(String engine, MLModelConfig modelConfig);
@@ -242,15 +241,24 @@ public abstract class DLModel implements Predictable {
             AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
                 ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
                 try {
-                    log.info("JMD os architectire {}", System.getProperty("os.arch"));
-                    log.info("JMD load libstdc++.so.6");
-                    System.load("/usr/lib64/libstdc++.so.6");
+                    final String engine_cache_dir = mlEngine.getMlCachePath().toAbsolutePath().toString();
+                    if (Files.exists(Paths.get(engine_cache_dir).resolve("libstdc++.so.6"))) {
+                        String libstd = System.getenv("LIBSTDCXX_LIBRARY_PATH");
+                        if (libstd != null) {
+                            try {
+                                log.info("Loading libstdc++.so.6 from: {}", libstd);
+                                System.load(libstd);
+                            } catch (UnsatisfiedLinkError e) {
+                                log.warn("Failed Loading libstdc++.so.6 from: {}. Falling back to default.", libstd);
+                            }
+                        }
+                    }
 
                     System.setProperty("PYTORCH_PRECXX11", System.getProperty("os.arch").equals("aarch64") ? "true" : "false");
-                    System.setProperty("DJL_CACHE_DIR", mlEngine.getMlCachePath().toAbsolutePath().toString());
+                    System.setProperty("DJL_CACHE_DIR", engine_cache_dir);
                     // DJL will read "/usr/java/packages/lib" if don't set "java.library.path". That will throw
                     // access denied exception
-                    System.setProperty("java.library.path", mlEngine.getMlCachePath().toAbsolutePath().toString());
+                    System.setProperty("java.library.path", engine_cache_dir);
                     System.setProperty("ai.djl.pytorch.num_interop_threads", "1");
                     System.setProperty("ai.djl.pytorch.num_threads", "1");
                     Thread.currentThread().setContextClassLoader(ai.djl.Model.class.getClassLoader());
@@ -319,7 +327,8 @@ public abstract class DLModel implements Predictable {
 
     /**
      * Parse model output to model tensor output and apply result filter.
-     * @param output model output
+     *
+     * @param output       model output
      * @param resultFilter result filter
      * @return model tensor output
      */
