@@ -57,7 +57,7 @@ public class MLEngine {
 
     private void conditionalLoadCustomLibStdc() {
         // If we want to load our own libstdc++.so.6 do it before djl does to files from cache
-        String libstd = System.getenv("LIBSTDCXX_LIBRARY_PATH");
+        final String libstd = System.getenv("LIBSTDCXX_LIBRARY_PATH");
         if (libstd != null) {
             try {
                 log.info("Loading libstdc++.so.6 from: {}", libstd);
