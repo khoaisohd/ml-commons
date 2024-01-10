@@ -31,7 +31,7 @@ public class MLEngine {
 
     public static final String REGISTER_MODEL_FOLDER = "register";
     public static final String DEPLOY_MODEL_FOLDER = "deploy";
-    private final String MODEL_REPO = "https://idee4xpu3dvm.objectstorage.uk-london-1.oci.customer-oci.com/n/idee4xpu3dvm/b/PretrainedModel/o";
+    private final String MODEL_REPO = "https://idee4xpu3dvm.objectstorage.uk-london-1.oci.customer-oci.com/n/idee4xpu3dvm/b/PretrainedModel";
 
     @Getter
     private final Path mlConfigPath;
