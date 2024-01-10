@@ -47,6 +47,22 @@ public class MLEngine {
         this.mlModelsCachePath = mlCachePath.resolve("models_cache");
         this.mlConfigPath = mlCachePath.resolve("config");
         this.encryptor = encryptor;
+
+        //TODO - This is a hack and can be fixed when djl.ai build has up to date logic
+        conditionalLoadCustomLibStdc();
+    }
+
+    private void conditionalLoadCustomLibStdc() {
+        // If we want to load our own libstdc++.so.6 do it before djl does to files from cache
+        String libstd = System.getenv("LIBSTDCXX_LIBRARY_PATH");
+        if (libstd != null) {
+            try {
+                log.info("Loading libstdc++.so.6 from: {}", libstd);
+                System.load(libstd);
+            } catch (UnsatisfiedLinkError e) {
+                log.warn("Failed Loading libstdc++.so.6 from: {}. Falling back to default.", libstd);
+            }
+        }
     }
 
     public String getPrebuiltModelMetaListPath() {
