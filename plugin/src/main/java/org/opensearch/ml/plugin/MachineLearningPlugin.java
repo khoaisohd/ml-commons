@@ -469,6 +469,7 @@ public class MachineLearningPlugin extends Plugin implements ActionPlugin, Searc
             encryptor
         );
 
+        // TODO : Temporary workaround as we current code does not handle SAN certs properly
         // Tuning off ssl validations
         HostnameVerifier hostnameVerifier = (hostname, session) -> true;
         HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
