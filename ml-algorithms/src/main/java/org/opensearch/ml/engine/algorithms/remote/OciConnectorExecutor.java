@@ -67,7 +67,9 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
           final RestClientFactory restClientFactory = RestClientFactoryBuilder.builder().build();
           final RequestSigner requestSigner = DefaultRequestSigner.createRequestSigner(provider);
 
-          try (RestClient restClient = restClientFactory.create(requestSigner, Collections.emptyMap())) {
+          // Currently let use restClient from OCI Java SDK 2 since the OCI Java SDK 3 won't work for
+          // the multi-class-loader plugin architecture of OpenSearch
+          try (final RestClient restClient = restClientFactory.create(requestSigner, Collections.emptyMap())) {
               final String endpoint = connector.getPredictEndpoint(parameters);
               restClient.setEndpoint(endpoint);
               final WebTarget target = restClient.getBaseTarget();
@@ -93,11 +95,8 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
                   tensorOutputs.add(tensors);
               }
           } catch (RuntimeException exception) {
-              log.error("Failed to execute predict in oci connector: " + exception.getMessage(), exception);
+              log.error("Failed to execute predict in oci connector: {}", exception.getMessage(), exception);
               throw exception;
-          } catch (Throwable e) {
-              log.error("Failed to execute predict in oci connector", e);
-              throw new MLException("Failed to execute predict in oci connector", e);
           }
     }
 }

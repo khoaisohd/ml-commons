@@ -167,8 +167,7 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
         this.description = in.readOptionalString();
         this.url = in.readOptionalString();
         this.ociOsEndpoint = in.readOptionalString();
-        this.urlConnectionParameters = in.readMap().entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> (String)e.getValue()));
+        this.urlConnectionParameters = in.readMap(StreamInput::readString, StreamInput::readString);
         this.ociClientAuthTenantId = in.readOptionalString();
         this.ociClientAuthUserId = in.readOptionalString();
         this.ociClientAuthRegion = in.readOptionalString();

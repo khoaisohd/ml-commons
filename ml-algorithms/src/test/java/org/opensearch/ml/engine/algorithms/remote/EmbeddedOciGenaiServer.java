@@ -27,12 +27,8 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
  */
 @Slf4j
 public class EmbeddedOciGenaiServer implements Closeable {
-    public static final String BASE_URI = "http://localhost:8081";
-    /**
-     * Hardcode PORT for now to make it simple. We should find the available port
-     * programmatically instead
-     */
-    private static final int PORT = 8081;
+    // Runs on ephemeral port
+    private static final int PORT = 0;
     private static final String URL = "localhost";
 
     private static final String SUCCESSFUL_RESPONSE_BODY =
@@ -69,6 +65,10 @@ public class EmbeddedOciGenaiServer implements Closeable {
                         throw new RuntimeException(e);
                     }
                 });
+    }
+
+    public String getEndpoint() {
+        return "http://localhost:" + server.getAddress().getPort();
     }
 
     @Override

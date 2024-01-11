@@ -121,7 +121,7 @@ public class ModelHelperTest {
         final MLRegisterModelInput modelInput =
                 modelInputBuilder
                         .url("oci-os://idee4xpu3dvm/phuong-bucket/traced_small_model.zip")
-                        .ociOsEndpoint(EmbeddedOciObjectStorageServer.BASE_URI)
+                        .ociOsEndpoint(embeddedOciObjectStorageServer.getEndpoint())
                         .urlConnectionParameters(
                                 Map.of(
                                         OciClientUtils.AUTH_TYPE_FIELD, OciClientAuthType.USER_PRINCIPAL.name(),
@@ -144,7 +144,7 @@ public class ModelHelperTest {
                 modelInputBuilder
                         .url("oci-os://idee4xpu3dvm/phuong-bucket/traced_small_model.zip")
                         .urlConnectionParameters(Collections.emptyMap())
-                        .ociOsEndpoint(EmbeddedOciObjectStorageServer.BASE_URI)
+                        .ociOsEndpoint(embeddedOciObjectStorageServer.getEndpoint())
                         .build();
         modelHelper.downloadAndSplit(modelInput, modelId, "1", FunctionName.TEXT_EMBEDDING, actionListener);
         final ArgumentCaptor<Exception> argumentCaptor = ArgumentCaptor.forClass(Exception.class);
@@ -157,7 +157,7 @@ public class ModelHelperTest {
         final MLRegisterModelInput modelInput =
                 modelInputBuilder
                         .url("oci-os://idee4xpu3dvm/traced_small_model.zip")
-                        .ociOsEndpoint(EmbeddedOciObjectStorageServer.BASE_URI)
+                        .ociOsEndpoint(embeddedOciObjectStorageServer.getEndpoint())
                         .urlConnectionParameters(
                                 Map.of(
                                         OciClientUtils.AUTH_TYPE_FIELD, OciClientAuthType.USER_PRINCIPAL.name(),

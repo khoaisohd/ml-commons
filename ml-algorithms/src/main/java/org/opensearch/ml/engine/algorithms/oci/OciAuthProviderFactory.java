@@ -48,7 +48,7 @@ public class OciAuthProviderFactory {
                                     try {
                                         return new FileInputStream(connectionParameters.get(OciClientUtils.PEMFILE_PATH_FIELD));
                                     } catch (Exception e) {
-                                        throw new RuntimeException(e);
+                                        throw new RuntimeException("Failed to read private key", e);
                                     }
                                 })
                         .build();

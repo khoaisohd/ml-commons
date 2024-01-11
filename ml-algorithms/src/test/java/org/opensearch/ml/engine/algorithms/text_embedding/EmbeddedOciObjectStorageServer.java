@@ -31,12 +31,8 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
  */
 @Slf4j
 public class EmbeddedOciObjectStorageServer implements Closeable {
-    public static final String BASE_URI = "http://localhost:8080/";
-    /**
-     * Hardcode PORT for now to make it simple. We should find the available port
-     * programmatically instead
-     */
-    private static final int PORT = 8080;
+    // Runs on ephemeral port
+    private static final int PORT = 0;
     private static final String URL = "localhost";
     private final HttpServer server;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -56,6 +52,10 @@ public class EmbeddedOciObjectStorageServer implements Closeable {
                         throw new RuntimeException(e);
                     }
                 });
+    }
+
+    public String getEndpoint() {
+        return "http://localhost:" + server.getAddress().getPort();
     }
 
     @Override

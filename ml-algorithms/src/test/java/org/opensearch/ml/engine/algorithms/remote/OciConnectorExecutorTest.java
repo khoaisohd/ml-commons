@@ -50,7 +50,7 @@ public class OciConnectorExecutorTest {
         final ConnectorAction predictAction = ConnectorAction.builder()
                 .actionType(ConnectorAction.ActionType.PREDICT)
                 .method("POST")
-                .url(EmbeddedOciGenaiServer.BASE_URI + "/20231130/actions/generateText")
+                .url(embeddedOciGenaiServer.getEndpoint() + "/20231130/actions/generateText")
                 .requestBody("{\"input\": \"${parameters.input}\"}")
                 .build();
 
@@ -68,7 +68,7 @@ public class OciConnectorExecutorTest {
                         .ociConnectorBuilder()
                         .name("test connector")
                         .version("1")
-                        .protocol("oci_genai")
+                        .protocol("oci_sigv1")
                         .parameters(parameters)
                         .credential(Map.of())
                         .actions(Collections.singletonList(predictAction)).build();
@@ -98,11 +98,11 @@ public class OciConnectorExecutorTest {
         final ConnectorAction predictAction = ConnectorAction.builder()
                 .actionType(ConnectorAction.ActionType.PREDICT)
                 .method("POST")
-                .url(EmbeddedOciGenaiServer.BASE_URI + "/20231130/actions/wrongEndpoint")
+                .url(embeddedOciGenaiServer.getEndpoint() + "/20231130/actions/wrongEndpoint")
                 .requestBody("{\"input\": \"${parameters.input}\"}")
                 .build();
 
-        final Map<String, String> credential =
+        final Map<String, String> parameters =
                 Map.of(
                         OciClientUtils.AUTH_TYPE_FIELD, OciClientAuthType.USER_PRINCIPAL.name(),
                         OciClientUtils.REGION_FIELD, "uk-london-1",
@@ -111,15 +111,14 @@ public class OciConnectorExecutorTest {
                         OciClientUtils.FINGERPRINT_FIELD, "3a:01:de:90:39:f4:b1:2f:02:75:77:c1:21:f2:20:24",
                         OciClientUtils.PEMFILE_PATH_FIELD, getClass().getClassLoader().getResource("org/opensearch/ml/engine/algorithms/oci/fakeKey.pem").toURI().getPath());
 
-        final Map<String, String> parameters = Map.of();
         final Connector connector =
                 OciConnector
                         .ociConnectorBuilder()
                         .name("test connector")
                         .version("1")
-                        .protocol("oci_genai")
+                        .protocol("oci_sigv1")
+                        .credential(Map.of())
                         .parameters(parameters)
-                        .credential(credential)
                         .actions(Collections.singletonList(predictAction)).build();
 
         final OciConnectorExecutor executor = new OciConnectorExecutor(connector);
