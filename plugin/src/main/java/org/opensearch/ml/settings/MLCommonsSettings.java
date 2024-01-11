@@ -10,6 +10,7 @@ import java.util.function.Function;
 
 import org.opensearch.common.settings.Setting;
 import org.opensearch.ml.common.conversation.ConversationalIndexConstants;
+import org.opensearch.ml.engine.MLEngine;
 import org.opensearch.searchpipelines.questionanswering.generative.GenerativeQAProcessorConstants;
 
 import com.google.common.collect.ImmutableList;
@@ -171,6 +172,11 @@ public final class MLCommonsSettings {
             Setting.Property.NodeScope,
             Setting.Property.Dynamic
         );
+
+    public static final Setting<String> OPEN_SEARCH_PRETRAINED_MODEL_REPO =
+            MLEngine.OPEN_SEARCH_PRETRAINED_MODEL_REPO;
+    public static final Setting<String> OPEN_SEARCH_PRETRAINED_MODEL_METALIST_PATH =
+            MLEngine.OPEN_SEARCH_PRETRAINED_MODEL_METALIST_PATH;
 
     public static final Setting<Boolean> ML_COMMONS_MEMORY_FEATURE_ENABLED = ConversationalIndexConstants.ML_COMMONS_MEMORY_FEATURE_ENABLED;
 

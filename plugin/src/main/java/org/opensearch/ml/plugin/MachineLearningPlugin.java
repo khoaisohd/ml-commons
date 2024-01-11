@@ -212,6 +212,8 @@ import org.opensearch.watcher.ResourceWatcherService;
 
 import com.google.common.collect.ImmutableList;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
 import lombok.SneakyThrows;
 
 public class MachineLearningPlugin extends Plugin implements ActionPlugin, SearchPlugin, SearchPipelinePlugin {
@@ -327,7 +329,7 @@ public class MachineLearningPlugin extends Plugin implements ActionPlugin, Searc
 
         Encryptor encryptor = new EncryptorImpl(clusterService, client);
 
-        mlEngine = new MLEngine(dataPath, encryptor);
+        mlEngine = new MLEngine(dataPath, encryptor, settings);
         nodeHelper = new DiscoveryNodeHelper(clusterService, settings);
         modelCacheHelper = new MLModelCacheHelper(clusterService, settings);
         cmHandler = new OpenSearchConversationalMemoryHandler(client, clusterService);
@@ -466,6 +468,10 @@ public class MachineLearningPlugin extends Plugin implements ActionPlugin, Searc
             mlIndicesHandler,
             encryptor
         );
+
+        // Tuning off ssl validations
+        HostnameVerifier hostnameVerifier = (hostname, session) -> true;
+        HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
 
         // TODO move this into MLFeatureEnabledSetting
         // search processor factories below will get BooleanSupplier that supplies the current value being updated through this.
@@ -689,7 +695,9 @@ public class MachineLearningPlugin extends Plugin implements ActionPlugin, Searc
                 MLCommonsSettings.ML_COMMONS_REMOTE_INFERENCE_ENABLED,
                 MLCommonsSettings.ML_COMMONS_UPDATE_CONNECTOR_ENABLED,
                 MLCommonsSettings.ML_COMMONS_MEMORY_FEATURE_ENABLED,
-                MLCommonsSettings.ML_COMMONS_RAG_PIPELINE_FEATURE_ENABLED
+                MLCommonsSettings.ML_COMMONS_RAG_PIPELINE_FEATURE_ENABLED,
+                MLCommonsSettings.OPEN_SEARCH_PRETRAINED_MODEL_REPO,
+                MLCommonsSettings.OPEN_SEARCH_PRETRAINED_MODEL_METALIST_PATH
             );
         return settings;
     }

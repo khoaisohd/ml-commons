@@ -5,8 +5,12 @@
 
 package org.opensearch.ml.engine;
 
+
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
+
+import org.opensearch.common.settings.Setting;
+import org.opensearch.common.settings.Settings;
 import org.opensearch.ml.common.FunctionName;
 import org.opensearch.ml.common.MLModel;
 import org.opensearch.ml.common.dataframe.DataFrame;
@@ -29,9 +33,23 @@ import java.util.Map;
 @Log4j2
 public class MLEngine {
 
+    public static final Setting<String> OPEN_SEARCH_PRETRAINED_MODEL_REPO =
+            Setting.simpleString(
+                    "oci.repository.openSearchPreTrainedModelRepo",
+                    Setting.Property.NodeScope,
+                    Setting.Property.Dynamic);
+
+    public static final Setting<String> OPEN_SEARCH_PRETRAINED_MODEL_METALIST_PATH =
+            Setting.simpleString(
+                    "oci.repository.openSearchPreTrainedModelMetaListPath",
+                    Setting.Property.NodeScope,
+                    Setting.Property.Dynamic);
+
     public static final String REGISTER_MODEL_FOLDER = "register";
     public static final String DEPLOY_MODEL_FOLDER = "deploy";
-    private final String MODEL_REPO = "https://artifacts.opensearch.org/models/ml-models";
+    private volatile String MODEL_REPO;
+
+    private volatile String PRE_BUILD_MODEL_META_LIST_PATH;
 
     @Getter
     private final Path mlConfigPath;
@@ -42,11 +60,14 @@ public class MLEngine {
 
     private Encryptor encryptor;
 
-    public MLEngine(Path opensearchDataFolder, Encryptor encryptor) {
+    public MLEngine(Path opensearchDataFolder, Encryptor encryptor, Settings settings) {
         this.mlCachePath = opensearchDataFolder.resolve("ml_cache");
         this.mlModelsCachePath = mlCachePath.resolve("models_cache");
         this.mlConfigPath = mlCachePath.resolve("config");
         this.encryptor = encryptor;
+        this.MODEL_REPO = OPEN_SEARCH_PRETRAINED_MODEL_REPO.get(settings);
+        this.PRE_BUILD_MODEL_META_LIST_PATH = OPEN_SEARCH_PRETRAINED_MODEL_METALIST_PATH.get(settings);
+
 
         //TODO - This is a hack and can be fixed when djl.ai build has up to date logic
         // User might want to load their own libstdc++.so.6 instead of one provided by djl
@@ -69,12 +90,12 @@ public class MLEngine {
     }
 
     public String getPrebuiltModelMetaListPath() {
-        return "https://artifacts.opensearch.org/models/ml-models/model_listing/pre_trained_models.json";
+        return this.PRE_BUILD_MODEL_META_LIST_PATH;
     }
 
     public String getPrebuiltModelConfigPath(String modelName, String version, MLModelFormat modelFormat) {
         String format = modelFormat.name().toLowerCase(Locale.ROOT);
-        return String.format("%s/%s/%s/%s/config.json", MODEL_REPO, modelName, version, format, Locale.ROOT);
+        return String.format("%s/%s/%s/%s/config.json", this.MODEL_REPO, modelName, version, format, Locale.ROOT);
     }
 
     public String getPrebuiltModelPath(String modelName, String version, MLModelFormat modelFormat) {
@@ -83,7 +104,7 @@ public class MLEngine {
         // /huggingface/sentence-transformers/msmarco-distilbert-base-tas-b/1.0.0/onnx/config.json
         String format = modelFormat.name().toLowerCase(Locale.ROOT);
         String modelZipFileName = modelName.substring(index).replace("/", "_") + "-" + version + "-" + format;
-        return String.format("%s/%s/%s/%s/%s.zip", MODEL_REPO, modelName, version, format, modelZipFileName, Locale.ROOT);
+        return String.format("%s/%s/%s/%s/%s.zip", this.MODEL_REPO, modelName, version, format, modelZipFileName, Locale.ROOT);
     }
 
     public Path getRegisterModelPath(String modelId, String modelName, String version) {
