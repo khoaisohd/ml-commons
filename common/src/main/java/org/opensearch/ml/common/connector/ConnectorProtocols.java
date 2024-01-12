@@ -7,14 +7,14 @@ package org.opensearch.ml.common.connector;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 public class ConnectorProtocols {
 
     public static final String HTTP = "http";
     public static final String AWS_SIGV4 = "aws_sigv4";
+    public static final String OCI_SIGV1 = "oci_sigv1";
 
-    public static final List<String> VALID_PROTOCOLS = Arrays.asList(AWS_SIGV4, HTTP);
+    public static final List<String> VALID_PROTOCOLS = Arrays.asList(AWS_SIGV4, HTTP, OCI_SIGV1);
 
     public static void validateProtocol(String protocol) {
         if (protocol == null) {

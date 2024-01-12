@@ -23,8 +23,11 @@ import org.opensearch.ml.common.model.TextEmbeddingModelConfig;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.opensearch.core.xcontent.XContentParserUtils.ensureExpectedToken;
 import static org.opensearch.ml.common.connector.Connector.createConnector;
@@ -42,13 +45,8 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
     public static final String DESCRIPTION_FIELD = "description";
     public static final String VERSION_FIELD = "version";
     public static final String URL_FIELD = "url";
+    public static final String URL_CONNECTION_PARAMETERS_FIELD = "url_connection_parameters";
     public static final String OCI_OS_ENDPOINT = "oci_os_endpoint";
-    public static final String OCI_CLIENT_AUTH_TYPE_FIELD = "oci_client_auth_type";
-    public static final String OCI_CLIENT_AUTH_TENANT_ID = "oci_client_auth_tenant_id";
-    public static final String OCI_CLIENT_AUTH_USER_ID = "oci_client_auth_user_id";
-    public static final String OCI_CLIENT_AUTH_REGION = "oci_client_auth_region";
-    public static final String OCI_CLIENT_AUTH_FINGERPRINT = "oci_client_auth_fingerprint";
-    public static final String OCI_CLIENT_AUTH_PEMFILEPATH = "oci_client_auth_pemfilepath";
     public static final String HASH_VALUE_FIELD = "model_content_hash_value";
     public static final String MODEL_FORMAT_FIELD = "model_format";
     public static final String MODEL_CONFIG_FIELD = "model_config";
@@ -68,7 +66,7 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
     private String description;
     private String url;
     private String ociOsEndpoint;
-    private OciClientAuthType ociClientAuthType;
+    private Map<String, String> urlConnectionParameters;
     private String ociClientAuthTenantId;
     private String ociClientAuthUserId;
     private String ociClientAuthRegion;
@@ -97,7 +95,7 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
                                 String description,
                                 String url,
                                 String ociOsEndpoint,
-                                OciClientAuthType ociClientAuthType,
+                                Map<String, String> urlConnectionParameters,
                                 String ociClientAuthTenantId,
                                 String ociClientAuthUserId,
                                 String ociClientAuthRegion,
@@ -137,12 +135,10 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
         this.description = description;
         this.url = url;
         this.ociOsEndpoint = ociOsEndpoint;
-        if (ociClientAuthType == null) {
-            // org.opensearch.core.common.io.stream.StreamOutput does not support writeOptionalEnum
-            // Let use NULL_PRINCIPAL for now
-            this.ociClientAuthType = OciClientAuthType.NULL_PRINCIPAL;
+        if (urlConnectionParameters == null) {
+            this.urlConnectionParameters = Collections.emptyMap();
         } else {
-            this.ociClientAuthType = ociClientAuthType;
+            this.urlConnectionParameters = urlConnectionParameters;
         }
         this.ociClientAuthTenantId = ociClientAuthTenantId;
         this.ociClientAuthUserId = ociClientAuthUserId;
@@ -171,7 +167,7 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
         this.description = in.readOptionalString();
         this.url = in.readOptionalString();
         this.ociOsEndpoint = in.readOptionalString();
-        this.ociClientAuthType = in.readEnum(OciClientAuthType.class);
+        this.urlConnectionParameters = in.readMap(StreamInput::readString, StreamInput::readString);
         this.ociClientAuthTenantId = in.readOptionalString();
         this.ociClientAuthUserId = in.readOptionalString();
         this.ociClientAuthRegion = in.readOptionalString();
@@ -213,7 +209,7 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
         out.writeOptionalString(description);
         out.writeOptionalString(url);
         out.writeOptionalString(ociOsEndpoint);
-        out.writeEnum(ociClientAuthType);
+        out.writeMap((Map) urlConnectionParameters);
         out.writeOptionalString(ociClientAuthTenantId);
         out.writeOptionalString(ociClientAuthUserId);
         out.writeOptionalString(ociClientAuthRegion);
@@ -277,23 +273,8 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
         if (ociOsEndpoint != null) {
             builder.field(OCI_OS_ENDPOINT, ociOsEndpoint);
         }
-        if (ociClientAuthType != null) {
-            builder.field(OCI_CLIENT_AUTH_TYPE_FIELD, ociClientAuthType);
-        }
-        if (ociClientAuthTenantId != null) {
-            builder.field(OCI_CLIENT_AUTH_TENANT_ID, ociClientAuthTenantId);
-        }
-        if (ociClientAuthUserId != null) {
-            builder.field(OCI_CLIENT_AUTH_USER_ID, ociClientAuthUserId);
-        }
-        if (ociClientAuthRegion != null) {
-            builder.field(OCI_CLIENT_AUTH_REGION, ociClientAuthRegion);
-        }
-        if (ociClientAuthFingerprint != null) {
-            builder.field(OCI_CLIENT_AUTH_FINGERPRINT, ociClientAuthFingerprint);
-        }
-        if (ociClientAuthPemfilepath != null) {
-            builder.field(OCI_CLIENT_AUTH_PEMFILEPATH, ociClientAuthPemfilepath);
+        if (urlConnectionParameters != null) {
+            builder.field(URL_CONNECTION_PARAMETERS_FIELD, urlConnectionParameters);
         }
         if (hashValue != null) {
             builder.field(HASH_VALUE_FIELD, hashValue);
@@ -335,7 +316,7 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
         String modelGroupId = null;
         String url = null;
         String ociOsEndpoint = null;
-        OciClientAuthType ociClientAuthType = null;
+        Map<String, String> urlConnectionParameters = null;
         String ociClientAuthTenantId = null;
         String ociClientAuthUserId = null;
         String ociClientAuthRegion = null;
@@ -367,26 +348,12 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
                 case URL_FIELD:
                     url = parser.text();
                     break;
+                case URL_CONNECTION_PARAMETERS_FIELD:
+                    urlConnectionParameters = parser.map().entrySet().stream()
+                            .collect(Collectors.toMap(Map.Entry::getKey, e -> (String)e.getValue()));
+                    break;
                 case OCI_OS_ENDPOINT:
                     ociOsEndpoint = parser.text();
-                    break;
-                case OCI_CLIENT_AUTH_TYPE_FIELD:
-                    ociClientAuthType = OciClientAuthType.from(parser.text().toUpperCase(Locale.ROOT));
-                    break;
-                case OCI_CLIENT_AUTH_TENANT_ID:
-                    ociClientAuthTenantId = parser.text();
-                    break;
-                case OCI_CLIENT_AUTH_USER_ID:
-                    ociClientAuthUserId = parser.text();
-                    break;
-                case OCI_CLIENT_AUTH_REGION:
-                    ociClientAuthRegion = parser.text();
-                    break;
-                case OCI_CLIENT_AUTH_FINGERPRINT:
-                    ociClientAuthFingerprint = parser.text();
-                    break;
-                case OCI_CLIENT_AUTH_PEMFILEPATH:
-                    ociClientAuthPemfilepath = parser.text();
                     break;
                 case HASH_VALUE_FIELD:
                     hashValue = parser.text();
@@ -432,7 +399,7 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
                     break;
             }
         }
-        return new MLRegisterModelInput(functionName, modelName, modelGroupId, version, description, url,ociOsEndpoint, ociClientAuthType, ociClientAuthTenantId, ociClientAuthUserId, ociClientAuthRegion, ociClientAuthFingerprint, ociClientAuthPemfilepath, hashValue, modelFormat, modelConfig, deployModel, modelNodeIds.toArray(new String[0]), connector, connectorId, backendRoles, addAllBackendRoles, accessMode, doesVersionCreateModelGroup);
+        return new MLRegisterModelInput(functionName, modelName, modelGroupId, version, description, url,ociOsEndpoint, urlConnectionParameters, ociClientAuthTenantId, ociClientAuthUserId, ociClientAuthRegion, ociClientAuthFingerprint, ociClientAuthPemfilepath, hashValue, modelFormat, modelConfig, deployModel, modelNodeIds.toArray(new String[0]), connector, connectorId, backendRoles, addAllBackendRoles, accessMode, doesVersionCreateModelGroup);
     }
 
     public static MLRegisterModelInput parse(XContentParser parser, boolean deployModel) throws IOException {
@@ -442,7 +409,7 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
         String version = null;
         String url = null;
         String ociOsEndpoint = null;
-        OciClientAuthType ociClientAuthType = null;
+        Map<String, String> urlConnectionParameters = null;
         String ociClientAuthTenantId = null;
         String ociClientAuthUserId = null;
         String ociClientAuthRegion = null;
@@ -487,23 +454,9 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
                 case OCI_OS_ENDPOINT:
                     ociOsEndpoint = parser.text();
                     break;
-                case OCI_CLIENT_AUTH_TYPE_FIELD:
-                    ociClientAuthType = OciClientAuthType.from(parser.text().toUpperCase(Locale.ROOT));
-                    break;
-                case OCI_CLIENT_AUTH_TENANT_ID:
-                    ociClientAuthTenantId = parser.text();
-                    break;
-                case OCI_CLIENT_AUTH_USER_ID:
-                    ociClientAuthUserId = parser.text();
-                    break;
-                case OCI_CLIENT_AUTH_REGION:
-                    ociClientAuthRegion = parser.text();
-                    break;
-                case OCI_CLIENT_AUTH_FINGERPRINT:
-                    ociClientAuthFingerprint = parser.text();
-                    break;
-                case OCI_CLIENT_AUTH_PEMFILEPATH:
-                    ociClientAuthPemfilepath = parser.text();
+                case URL_CONNECTION_PARAMETERS_FIELD:
+                    urlConnectionParameters = parser.map().entrySet().stream()
+                            .collect(Collectors.toMap(Map.Entry::getKey, e -> (String)e.getValue()));
                     break;
                 case CONNECTOR_FIELD:
                     connector = createConnector(parser);
@@ -546,29 +499,6 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
                     break;
             }
         }
-        return new MLRegisterModelInput(functionName, name, modelGroupId, version, description, url, ociOsEndpoint, ociClientAuthType, ociClientAuthTenantId, ociClientAuthUserId, ociClientAuthRegion, ociClientAuthFingerprint, ociClientAuthPemfilepath, hashValue, modelFormat, modelConfig, deployModel, modelNodeIds.toArray(new String[0]), connector, connectorId, backendRoles, addAllBackendRoles, accessMode, doesVersionCreateModelGroup);
-    }
-
-
-    /**
-     * The type of authentication supported by OCI. For more details please visit doc
-     * https://docs.public.oneportal.content.oci.oraclecloud.com/en-us/iaas/Content/API/Concepts/sdk_authentication_methods.htm
-     */
-    public enum OciClientAuthType {
-        RESOURCE_PRINCIPAL,
-        INSTANCE_PRINCIPAL,
-        USER_PRINCIPAL,
-        // MLRegisterModelInput won't be able to serialized when ociClientAuthType is null since StreamOutput
-        // does not support writeOptionalEnum. Let's have a special value NULL_PRINCIPAL when ociClientAuthType
-        // is not provided
-        NULL_PRINCIPAL;
-
-        public static OciClientAuthType from(String value) {
-            try {
-                return OciClientAuthType.valueOf(value);
-            } catch (Exception e) {
-                throw new IllegalArgumentException("Wrong OCI client auth type");
-            }
-        }
+        return new MLRegisterModelInput(functionName, name, modelGroupId, version, description, url, ociOsEndpoint, urlConnectionParameters, ociClientAuthTenantId, ociClientAuthUserId, ociClientAuthRegion, ociClientAuthFingerprint, ociClientAuthPemfilepath, hashValue, modelFormat, modelConfig, deployModel, modelNodeIds.toArray(new String[0]), connector, connectorId, backendRoles, addAllBackendRoles, accessMode, doesVersionCreateModelGroup);
     }
 }
