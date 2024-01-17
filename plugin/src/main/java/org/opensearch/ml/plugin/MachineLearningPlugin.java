@@ -697,8 +697,7 @@ public class MachineLearningPlugin extends Plugin implements ActionPlugin, Searc
                 MLCommonsSettings.ML_COMMONS_UPDATE_CONNECTOR_ENABLED,
                 MLCommonsSettings.ML_COMMONS_MEMORY_FEATURE_ENABLED,
                 MLCommonsSettings.ML_COMMONS_RAG_PIPELINE_FEATURE_ENABLED,
-                MLCommonsSettings.OPEN_SEARCH_PRETRAINED_MODEL_REPO,
-                MLCommonsSettings.OPEN_SEARCH_PRETRAINED_MODEL_METALIST_PATH
+                MLCommonsSettings.OPEN_SEARCH_PRETRAINED_MODEL_REPO
             );
         return settings;
     }
