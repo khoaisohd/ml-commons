@@ -175,8 +175,6 @@ public final class MLCommonsSettings {
 
     public static final Setting<String> OPEN_SEARCH_PRETRAINED_MODEL_REPO =
             MLEngine.OPEN_SEARCH_PRETRAINED_MODEL_REPO;
-    public static final Setting<String> OPEN_SEARCH_PRETRAINED_MODEL_METALIST_PATH =
-            MLEngine.OPEN_SEARCH_PRETRAINED_MODEL_METALIST_PATH;
 
     public static final Setting<Boolean> ML_COMMONS_MEMORY_FEATURE_ENABLED = ConversationalIndexConstants.ML_COMMONS_MEMORY_FEATURE_ENABLED;
 
