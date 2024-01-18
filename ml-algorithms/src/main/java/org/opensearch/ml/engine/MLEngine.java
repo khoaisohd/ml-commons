@@ -35,7 +35,7 @@ public class MLEngine {
 
     public static final Setting<String> OPEN_SEARCH_PRETRAINED_MODEL_REPO =
             Setting.simpleString(
-                    "oci.repository.openSearchPreTrainedModelRepo",
+                    "plugins.ml_commons.model_repo",
                     Setting.Property.NodeScope,
                     Setting.Property.Dynamic);
 
