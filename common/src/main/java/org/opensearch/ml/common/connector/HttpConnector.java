@@ -283,11 +283,16 @@ public class HttpConnector extends AbstractConnector {
 
     @Override
     public  <T> T createPredictPayload(Map<String, String> parameters) {
-        Optional<ConnectorAction> predictAction = findPredictAction();
-        if (predictAction.isPresent() && predictAction.get().getRequestBody() != null) {
-            String payload = predictAction.get().getRequestBody();
+        return createPayload(ConnectorAction.ActionType.PREDICT, parameters);
+    }
+
+    @Override
+    public  <T> T createPayload(ConnectorAction.ActionType actionType, Map<String, String> parameters) {
+        final Optional<ConnectorAction> action = findAction(actionType);
+        if (action.isPresent() && action.get().getRequestBody() != null) {
+            String payload = action.get().getRequestBody();
             payload = fillNullParameters(parameters, payload);
-            StringSubstitutor substitutor = new StringSubstitutor(parameters, "${parameters.", "}");
+            final StringSubstitutor substitutor = new StringSubstitutor(parameters, "${parameters.", "}");
             payload = substitutor.replace(payload);
 
             if (!isJson(payload)) {
@@ -354,7 +359,10 @@ public class HttpConnector extends AbstractConnector {
     }
 
     public String getPredictHttpMethod() {
-        return findPredictAction().get().getMethod();
+        return getHttpMethod(ConnectorAction.ActionType.PREDICT);
     }
 
+    public String getHttpMethod(ConnectorAction.ActionType actionType) {
+        return findAction(actionType).get().getMethod();
+    }
 }

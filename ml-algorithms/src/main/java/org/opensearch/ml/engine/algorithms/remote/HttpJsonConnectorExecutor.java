@@ -9,16 +9,16 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.opensearch.OpenSearchStatusException;
 import org.opensearch.core.rest.RestStatus;
 import org.opensearch.ml.common.connector.Connector;
+import org.opensearch.ml.common.connector.ConnectorAction;
 import org.opensearch.ml.common.connector.HttpConnector;
 import org.opensearch.ml.common.exception.MLException;
 import org.opensearch.ml.common.input.MLInput;
@@ -27,12 +27,13 @@ import org.opensearch.ml.engine.annotation.ConnectorExecutor;
 import org.opensearch.ml.engine.httpclient.MLHttpClientFactory;
 import org.opensearch.script.ScriptService;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.opensearch.ml.common.CommonValue.REMOTE_SERVICE_ERROR;
 import static org.opensearch.ml.common.connector.ConnectorProtocols.HTTP;
@@ -47,22 +48,61 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
     @Setter @Getter
     private ScriptService scriptService;
 
-    public HttpJsonConnectorExecutor(Connector connector) {
+    private final CloseableHttpClient httpClient;
+
+    public HttpJsonConnectorExecutor(Connector connector, CloseableHttpClient httpClient) {
         this.connector = (HttpConnector)connector;
+        this.httpClient = httpClient;
+    }
+
+    public HttpJsonConnectorExecutor(Connector connector) {
+        this(connector, MLHttpClientFactory.getCloseableHttpClient());
     }
 
     @Override
     public void invokeRemoteModel(MLInput mlInput, Map<String, String> parameters, String payload, List<ModelTensors> tensorOutputs) {
         try {
-            AtomicReference<String> responseRef = new AtomicReference<>("");
-            AtomicReference<Integer> statusCodeRef = new AtomicReference<>();
+            final String endpoint = connector.getPredictEndpoint(parameters);
+            final String method = connector.getPredictHttpMethod();
+            final HttpResponse httpResponse = makeHttpCall(endpoint, method, payload);
+            final int statusCode = httpResponse.getStatusLine().getStatusCode();
+            final InputStream responseBody = httpResponse.getEntity().getContent();
+            final String modelResponse = ConnectorUtils.getInputStreamContent(responseBody);
 
+            if (statusCode < 200 || statusCode >= 300) {
+                throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR + modelResponse, RestStatus.fromCode(statusCode));
+            }
+
+            final ModelTensors tensors = processOutput(modelResponse, connector, scriptService, parameters);
+            tensors.setStatusCode(statusCode);
+            tensorOutputs.add(tensors);
+        } catch (IOException e) {
+            throw new MLException("Fail to execute http connector", e);
+        }
+    }
+
+    public InputStream invokeDownload(Map<String, String> parameters, String payload) throws IOException {
+        final String endpoint = connector.getEndpoint(ConnectorAction.ActionType.DOWNLOAD, parameters);
+        final String httpMethod = connector.getHttpMethod(ConnectorAction.ActionType.DOWNLOAD);
+        final HttpResponse httpResponse = makeHttpCall(endpoint, httpMethod, payload);
+        final int statusCode = httpResponse.getStatusLine().getStatusCode();
+        final InputStream responseBody = httpResponse.getEntity().getContent();
+
+        if (statusCode < 200 || statusCode >= 300) {
+            throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR +
+                    ConnectorUtils.getInputStreamContent(responseBody), RestStatus.fromCode(statusCode));
+        } else {
+            return responseBody;
+        }
+    }
+
+    private HttpResponse makeHttpCall(String endpoint, String httpMethod, String payload) {
+        try {
             HttpUriRequest request;
-            switch (connector.getPredictHttpMethod().toUpperCase(Locale.ROOT)) {
+            switch (httpMethod.toUpperCase(Locale.ROOT)) {
                 case "POST":
                     try {
-                        String predictEndpoint = connector.getPredictEndpoint(parameters);
-                        request = new HttpPost(predictEndpoint);
+                        request = new HttpPost(endpoint);
                         HttpEntity entity = new StringEntity(payload);
                         ((HttpPost)request).setEntity(entity);
                     } catch (Exception e) {
@@ -71,7 +111,7 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
                     break;
                 case "GET":
                     try {
-                        request = new HttpGet(connector.getPredictEndpoint(parameters));
+                        request = new HttpGet(endpoint);
                     } catch (Exception e) {
                         throw new MLException("Failed to create http request for remote model", e);
                     }
@@ -85,7 +125,7 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
             if (headers != null) {
                 for (String key : headers.keySet()) {
                     request.addHeader(key, (String)headers.get(key));
-                    if (key.toLowerCase().equals("Content-Type")) {
+                    if (key.equalsIgnoreCase("Content-Type")) {
                         hasContentTypeHeader = true;
                     }
                 }
@@ -94,26 +134,9 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
                 request.addHeader("Content-Type", "application/json");
             }
 
-            AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                try (CloseableHttpClient httpClient = getHttpClient();
-                     CloseableHttpResponse response = httpClient.execute(request)) {
-                    HttpEntity responseEntity = response.getEntity();
-                    String responseBody = EntityUtils.toString(responseEntity);
-                    EntityUtils.consume(responseEntity);
-                    responseRef.set(responseBody);
-                    statusCodeRef.set(response.getStatusLine().getStatusCode());
-                }
-                return null;
+            return AccessController.doPrivileged((PrivilegedExceptionAction<HttpResponse>) () -> {
+                return httpClient.execute(request);
             });
-            String modelResponse = responseRef.get();
-            Integer statusCode = statusCodeRef.get();
-            if (statusCode < 200 || statusCode >= 300) {
-                throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR + modelResponse, RestStatus.fromCode(statusCode));
-            }
-
-            ModelTensors tensors = processOutput(modelResponse, connector, scriptService, parameters);
-            tensors.setStatusCode(statusCode);
-            tensorOutputs.add(tensors);
         } catch (RuntimeException e) {
             log.error("Fail to execute http connector", e);
             throw e;
@@ -123,7 +146,4 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
         }
     }
 
-    public CloseableHttpClient getHttpClient() {
-        return MLHttpClientFactory.getCloseableHttpClient();
-    }
 }

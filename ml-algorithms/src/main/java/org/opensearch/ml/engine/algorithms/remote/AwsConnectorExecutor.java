@@ -11,6 +11,7 @@ import lombok.extern.log4j.Log4j2;
 import org.opensearch.OpenSearchStatusException;
 import org.opensearch.ml.common.connector.AwsConnector;
 import org.opensearch.ml.common.connector.Connector;
+import org.opensearch.ml.common.connector.ConnectorAction;
 import org.opensearch.ml.common.exception.MLException;
 import org.opensearch.ml.common.input.MLInput;
 import org.opensearch.ml.common.output.model.ModelTensors;
@@ -26,17 +27,21 @@ import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.SdkHttpFullRequest;
 
 import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.opensearch.ml.common.CommonValue.REMOTE_SERVICE_ERROR;
 import static org.opensearch.ml.common.connector.ConnectorProtocols.AWS_SIGV4;
 import static org.opensearch.ml.engine.algorithms.remote.ConnectorUtils.processOutput;
+import static software.amazon.awssdk.http.SdkHttpMethod.GET;
 import static software.amazon.awssdk.http.SdkHttpMethod.POST;
 
 @Log4j2
@@ -58,39 +63,19 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
         this(connector, new DefaultSdkHttpClientBuilder().build());
     }
 
-     @Override
-     public void invokeRemoteModel(MLInput mlInput, Map<String, String> parameters, String payload, List<ModelTensors> tensorOutputs) {
+    @Override
+    public void invokeRemoteModel(MLInput mlInput, Map<String, String> parameters, String payload, List<ModelTensors> tensorOutputs) {
         try {
-            String endpoint = connector.getPredictEndpoint(parameters);
-            RequestBody requestBody = RequestBody.fromString(payload);
-
-            SdkHttpFullRequest.Builder builder = SdkHttpFullRequest.builder()
-                    .method(POST)
-                    .uri(URI.create(endpoint))
-                    .contentStreamProvider(requestBody.contentStreamProvider());
-            Map<String, String> headers = connector.getDecryptedHeaders();
-            if (headers != null) {
-                for (String key : headers.keySet()) {
-                    builder.putHeader(key, headers.get(key));
-                }
-            }
-            SdkHttpFullRequest request = builder.build();
-            HttpExecuteRequest executeRequest = HttpExecuteRequest.builder()
-                    .request(signRequest(request))
-                    .contentStreamProvider(request.contentStreamProvider().orElse(null))
-                    .build();
-
-            HttpExecuteResponse response = AccessController.doPrivileged((PrivilegedExceptionAction<HttpExecuteResponse>) () -> {
-                return httpClient.prepareRequest(executeRequest).call();
-            });
-            int statusCode = response.httpResponse().statusCode();
+            final String endpoint = connector.getPredictEndpoint(parameters);
+            final HttpExecuteResponse response = makeHttpCall(endpoint, "POST", payload);
+            final int statusCode = response.httpResponse().statusCode();
 
             AbortableInputStream body = null;
             if (response.responseBody().isPresent()) {
                 body = response.responseBody().get();
             }
 
-            StringBuilder responseBuilder = new StringBuilder();
+            final StringBuilder responseBuilder = new StringBuilder();
             if (body != null) {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8))) {
                     String line;
@@ -101,14 +86,78 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
             } else {
                 throw new OpenSearchStatusException("No response from model", RestStatus.BAD_REQUEST);
             }
-            String modelResponse = responseBuilder.toString();
+
+            final String modelResponse = responseBuilder.toString();
+
             if (statusCode < 200 || statusCode >= 300) {
                 throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR + modelResponse, RestStatus.fromCode(statusCode));
             }
 
-            ModelTensors tensors = processOutput(modelResponse, connector, scriptService, parameters);
+            final ModelTensors tensors = processOutput(modelResponse, connector, scriptService, parameters);
             tensors.setStatusCode(statusCode);
             tensorOutputs.add(tensors);
+        } catch (IOException e) {
+            throw new MLException("Fail to execute predict in aws connector", e);
+        }
+    }
+
+    @Override
+    public InputStream invokeDownload(Map<String, String> parameters, String payload) throws IOException {
+        final String endpoint = connector.getEndpoint(ConnectorAction.ActionType.DOWNLOAD, parameters);
+        final String httpMethod = connector.getHttpMethod(ConnectorAction.ActionType.DOWNLOAD);
+        final HttpExecuteResponse response = makeHttpCall(endpoint, httpMethod, payload);
+        final int statusCode = response.httpResponse().statusCode();
+        final AbortableInputStream responseBody =
+                response.responseBody().orElseThrow(
+                        () -> new OpenSearchStatusException("Failed to invoke download", RestStatus.BAD_REQUEST));
+
+        if (statusCode < 200 || statusCode >= 300) {
+            throw new OpenSearchStatusException(
+                    REMOTE_SERVICE_ERROR +
+                            ConnectorUtils.getInputStreamContent(responseBody),
+                    RestStatus.fromCode(statusCode));
+        } else {
+            return responseBody;
+        }
+    }
+
+
+    private HttpExecuteResponse makeHttpCall(String endpoint, String httpMethod, String payload) {
+        try {
+            final SdkHttpFullRequest.Builder builder =
+                    SdkHttpFullRequest.builder().uri(URI.create(endpoint));
+
+            if (payload != null) {
+                final RequestBody requestBody = RequestBody.fromString(payload);
+                builder.contentStreamProvider(requestBody.contentStreamProvider());
+            }
+
+            switch (httpMethod.toUpperCase(Locale.ROOT)) {
+                case "POST":
+                    builder.method(POST);
+                    break;
+                case "GET":
+                    builder.method(GET);
+                    break;
+                default:
+                    throw new IllegalArgumentException("unsupported http method");
+            }
+
+            final Map<String, String> headers = connector.getDecryptedHeaders();
+            if (headers != null) {
+                for (String key : headers.keySet()) {
+                    builder.putHeader(key, headers.get(key));
+                }
+            }
+            final SdkHttpFullRequest request = builder.build();
+            final HttpExecuteRequest executeRequest = HttpExecuteRequest.builder()
+                    .request(signRequest(request))
+                    .contentStreamProvider(request.contentStreamProvider().orElse(null))
+                    .build();
+
+            return AccessController.doPrivileged((PrivilegedExceptionAction<HttpExecuteResponse>) () -> {
+                return httpClient.prepareRequest(executeRequest).call();
+            });
         } catch (RuntimeException exception) {
             log.error("Failed to execute predict in aws connector: " + exception.getMessage(), exception);
             throw exception;

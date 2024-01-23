@@ -21,7 +21,6 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.opensearch.OpenSearchStatusException;
-import org.opensearch.cluster.ClusterStateTaskConfig;
 import org.opensearch.ingest.TestTemplateService;
 import org.opensearch.ml.common.FunctionName;
 import org.opensearch.ml.common.connector.Connector;
@@ -34,11 +33,12 @@ import org.opensearch.ml.common.dataset.TextDocsInputDataSet;
 import org.opensearch.ml.common.dataset.remote.RemoteInferenceInputDataSet;
 import org.opensearch.ml.common.input.MLInput;
 import org.opensearch.ml.common.output.model.ModelTensorOutput;
-import org.opensearch.ml.engine.httpclient.MLHttpClientFactory;
 import org.opensearch.script.ScriptService;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -88,13 +88,12 @@ public class HttpJsonConnectorExecutorTest {
                 .requestBody("{\"input\": \"${parameters.input}\"}")
                 .build();
         Connector connector = HttpConnector.builder().name("test connector").version("1").protocol("http").actions(Arrays.asList(predictAction)).build();
-        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector));
+        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector, httpClient));
         when(httpClient.execute(any())).thenReturn(response);
         HttpEntity entity = new StringEntity("{\"response\": \"test result\"}");
         when(response.getEntity()).thenReturn(entity);
         StatusLine statusLine = new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 200, "OK");
         when(response.getStatusLine()).thenReturn(statusLine);
-        when(executor.getHttpClient()).thenReturn(httpClient);
         MLInputDataset inputDataSet = RemoteInferenceInputDataSet.builder().parameters(ImmutableMap.of("input", "test input data")).build();
         ModelTensorOutput modelTensorOutput = executor.executePredict(MLInput.builder().algorithm(FunctionName.REMOTE).inputDataset(inputDataSet).build());
         Assert.assertEquals(1, modelTensorOutput.getMlModelOutputs().size());
@@ -117,8 +116,7 @@ public class HttpJsonConnectorExecutorTest {
         StatusLine statusLine = new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 200, "OK");
         when(response.getStatusLine()).thenReturn(statusLine);
         Connector connector = HttpConnector.builder().name("test connector").version("1").protocol("http").actions(Arrays.asList(predictAction)).build();
-        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector));
-        when(executor.getHttpClient()).thenReturn(httpClient);
+        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector, httpClient));
         MLInputDataset inputDataSet = TextDocsInputDataSet.builder().docs(Arrays.asList("test doc1", "test doc2")).build();
         ModelTensorOutput modelTensorOutput = executor.executePredict(MLInput.builder().algorithm(FunctionName.REMOTE).inputDataset(inputDataSet).build());
         Assert.assertEquals(2, modelTensorOutput.getMlModelOutputs().size());
@@ -143,8 +141,7 @@ public class HttpJsonConnectorExecutorTest {
         StatusLine statusLine = new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 429, "OK");
         when(response.getStatusLine()).thenReturn(statusLine);
         Connector connector = HttpConnector.builder().name("test connector").version("1").protocol("http").actions(Arrays.asList(predictAction)).build();
-        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector));
-        when(executor.getHttpClient()).thenReturn(httpClient);
+        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector, httpClient));
         MLInputDataset inputDataSet = TextDocsInputDataSet.builder().docs(Arrays.asList("test doc1", "test doc2")).build();
         executor.executePredict(MLInput.builder().algorithm(FunctionName.REMOTE).inputDataset(inputDataSet).build());
     }
@@ -166,7 +163,7 @@ public class HttpJsonConnectorExecutorTest {
                 .requestBody("{\"input\": ${parameters.input}}")
                 .build();
         Connector connector = HttpConnector.builder().name("test connector").version("1").protocol("http").actions(Arrays.asList(predictAction)).build();
-        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector));
+        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector, httpClient));
         executor.setScriptService(scriptService);
         when(httpClient.execute(any())).thenReturn(response);
         String modelResponse = "{\n" + "    \"object\": \"list\",\n" + "    \"data\": [\n" + "        {\n"
@@ -181,12 +178,50 @@ public class HttpJsonConnectorExecutorTest {
         when(response.getStatusLine()).thenReturn(statusLine);
         HttpEntity entity = new StringEntity(modelResponse);
         when(response.getEntity()).thenReturn(entity);
-        when(executor.getHttpClient()).thenReturn(httpClient);
         MLInputDataset inputDataSet = TextDocsInputDataSet.builder().docs(Arrays.asList("test doc1", "test doc2")).build();
         ModelTensorOutput modelTensorOutput = executor.executePredict(MLInput.builder().algorithm(FunctionName.REMOTE).inputDataset(inputDataSet).build());
         Assert.assertEquals(2, modelTensorOutput.getMlModelOutputs().size());
         Assert.assertEquals("sentence_embedding", modelTensorOutput.getMlModelOutputs().get(0).getMlModelTensors().get(0).getName());
         Assert.assertArrayEquals(new Number[] {-0.014555434, -0.002135904, 0.0035105038}, modelTensorOutput.getMlModelOutputs().get(0).getMlModelTensors().get(0).getData());
         Assert.assertArrayEquals(new Number[] {-0.014555434, -0.002135904, 0.0035105038}, modelTensorOutput.getMlModelOutputs().get(0).getMlModelTensors().get(1).getData());
+    }
+
+    @Test
+    public void executeDownload() throws IOException {
+        ConnectorAction predictAction = ConnectorAction.builder()
+                .actionType(ConnectorAction.ActionType.DOWNLOAD)
+                .method("POST")
+                .url("http://test.com/mock")
+                .requestBody("{\"input\": \"${parameters.input}\"}")
+                .build();
+        Connector connector = HttpConnector.builder().name("test connector").version("1").protocol("http").actions(Arrays.asList(predictAction)).build();
+        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector, httpClient));
+        when(httpClient.execute(any())).thenReturn(response);
+        HttpEntity entity = new StringEntity("responseBody");
+        when(response.getEntity()).thenReturn(entity);
+        StatusLine statusLine = new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 200, "OK");
+        when(response.getStatusLine()).thenReturn(statusLine);
+        InputStream responseBody = executor.executeDownload(Map.of("input", "123"));
+        Assert.assertEquals("responseBody", ConnectorUtils.getInputStreamContent(responseBody));
+    }
+
+    @Test
+    public void executeDownload_failureFromServer() throws IOException {
+        exceptionRule.expect(OpenSearchStatusException.class);
+        exceptionRule.expectMessage("{\"message\": \"Too many requests\"}");
+        ConnectorAction predictAction = ConnectorAction.builder()
+                .actionType(ConnectorAction.ActionType.DOWNLOAD)
+                .method("POST")
+                .url("http://test.com/mock")
+                .requestBody("{\"input\": \"${parameters.input}\"}")
+                .build();
+        Connector connector = HttpConnector.builder().name("test connector").version("1").protocol("http").actions(Arrays.asList(predictAction)).build();
+        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector, httpClient));
+        when(httpClient.execute(any())).thenReturn(response);
+        HttpEntity entity = new StringEntity("{\"message\": \"Too many requests\"}");
+        when(response.getEntity()).thenReturn(entity);
+        StatusLine statusLine = new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 401, "OK");
+        when(response.getStatusLine()).thenReturn(statusLine);
+        executor.executeDownload(Map.of("input", "123"));
     }
 }
