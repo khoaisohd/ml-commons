@@ -33,22 +33,22 @@ import java.util.Map;
 @Log4j2
 public class MLEngine {
 
-    public static final Setting<String> OPEN_SEARCH_PRETRAINED_MODEL_REPO =
+    public static final Setting<String> OPENSEARCH_MODEL_REPO_ENDPOINT =
             Setting.simpleString(
-                    "plugins.ml_commons.model_repo",
+                    "plugins.ml_commons.model_repo_endpoint",
                     Setting.Property.NodeScope,
                     Setting.Property.Dynamic);
-    public static final Setting<String> OPEN_SEARCH_PRETRAINED_MODEL_METALIST_PATH =
+    public static final Setting<String> OPEN_SEARCH_MODEL_METALIST_ENDPOINT =
             Setting.simpleString(
-                    "plugins.ml_commons.model_metalist_path",
+                    "plugins.ml_commons.model_metalist_endpoint",
                     Setting.Property.NodeScope,
                     Setting.Property.Dynamic);
 
 
     public static final String REGISTER_MODEL_FOLDER = "register";
     public static final String DEPLOY_MODEL_FOLDER = "deploy";
-    private volatile String modelRepo;
-    private volatile String modelMetalistPath;
+    private volatile String modelRepoEndpoint;
+    private volatile String modelMetalistEndpoint;
 
     @Getter
     private final Path mlConfigPath;
@@ -64,8 +64,8 @@ public class MLEngine {
         this.mlModelsCachePath = mlCachePath.resolve("models_cache");
         this.mlConfigPath = mlCachePath.resolve("config");
         this.encryptor = encryptor;
-        this.modelRepo = OPEN_SEARCH_PRETRAINED_MODEL_REPO.get(settings);
-        this.modelMetalistPath = OPEN_SEARCH_PRETRAINED_MODEL_METALIST_PATH.get(settings);
+        this.modelRepoEndpoint = OPENSEARCH_MODEL_REPO_ENDPOINT.get(settings);
+        this.modelMetalistEndpoint = OPEN_SEARCH_MODEL_METALIST_ENDPOINT.get(settings);
 
         //TODO - This is a hack and can be fixed when djl.ai build has up to date logic
         // User might want to load their own libstdc++.so.6 instead of one provided by djl
@@ -88,12 +88,12 @@ public class MLEngine {
     }
 
     public String getPrebuiltModelMetaListPath() {
-        return this.modelMetalistPath;
+        return this.modelMetalistEndpoint;
     }
 
     public String getPrebuiltModelConfigPath(String modelName, String version, MLModelFormat modelFormat) {
         String format = modelFormat.name().toLowerCase(Locale.ROOT);
-        return String.format("%s/%s/%s/%s/config.json", this.modelRepo, modelName, version, format, Locale.ROOT);
+        return String.format("%s/%s/%s/%s/config.json", this.modelRepoEndpoint, modelName, version, format, Locale.ROOT);
     }
 
     public String getPrebuiltModelPath(String modelName, String version, MLModelFormat modelFormat) {
@@ -102,7 +102,7 @@ public class MLEngine {
         // /huggingface/sentence-transformers/msmarco-distilbert-base-tas-b/1.0.0/onnx/config.json
         String format = modelFormat.name().toLowerCase(Locale.ROOT);
         String modelZipFileName = modelName.substring(index).replace("/", "_") + "-" + version + "-" + format;
-        return String.format("%s/%s/%s/%s/%s.zip", this.modelRepo, modelName, version, format, modelZipFileName, Locale.ROOT);
+        return String.format("%s/%s/%s/%s/%s.zip", this.modelRepoEndpoint, modelName, version, format, modelZipFileName, Locale.ROOT);
     }
 
     public Path getRegisterModelPath(String modelId, String modelName, String version) {
