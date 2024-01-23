@@ -15,6 +15,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.ml.common.FunctionName;
+import org.opensearch.ml.common.connector.ConnectorAction;
+import org.opensearch.ml.common.connector.ConnectorProtocols;
 import org.opensearch.ml.common.connector.OciConnector;
 import org.opensearch.ml.common.model.MLModelConfig;
 import org.opensearch.ml.common.model.MLModelFormat;
@@ -32,6 +34,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.security.PrivilegedActionException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -120,57 +123,32 @@ public class ModelHelperTest {
     public void testDownloadAndSplitFromOci() throws URISyntaxException {
         final MLRegisterModelInput modelInput =
                 modelInputBuilder
-                        .url("oci-os://idee4xpu3dvm/phuong-bucket/traced_small_model.zip")
-                        .ociOsEndpoint(embeddedOciObjectStorageServer.getEndpoint())
-                        .urlConnectionParameters(
-                                Map.of(
-                                        OciClientUtils.AUTH_TYPE_FIELD, OciClientAuthType.USER_PRINCIPAL.name(),
-                                        OciClientUtils.REGION_FIELD, "uk-london-1",
-                                        OciClientUtils.TENANT_ID_FIELD, "ocid1.tenancy.oc1..aaaaaaaagkbzgg6lpzrf47xzy4rjoxg4de6ncfiq2rncmjiujvy2hjgxvziq",
-                                        OciClientUtils.USER_ID_FIELD, "ocid1.user.oc1..aaaaaaaajj7kdinuhkpct4rhsj7gfhyh5dja7ltcd5rrsylrozptssllagyq",
-                                        OciClientUtils.FINGERPRINT_FIELD, "3a:01:de:90:39:f4:b1:2f:02:75:77:c1:21:f2:20:24",
-                                        OciClientUtils.PEMFILE_PATH_FIELD, getClass().getClassLoader().getResource("org/opensearch/ml/engine/algorithms/oci/fakeKey.pem").toURI().getPath()))
+                        .urlConnector(
+                                OciConnector
+                                        .ociConnectorBuilder()
+                                        .protocol(ConnectorProtocols.OCI_SIGV1)
+                                        .parameters(
+                                                Map.of(
+                                                        OciClientUtils.AUTH_TYPE_FIELD, OciClientAuthType.USER_PRINCIPAL.name(),
+                                                        OciClientUtils.REGION_FIELD, "uk-london-1",
+                                                        OciClientUtils.TENANT_ID_FIELD, "ocid1.tenancy.oc1..aaaaaaaagkbzgg6lpzrf47xzy4rjoxg4de6ncfiq2rncmjiujvy2hjgxvziq",
+                                                        OciClientUtils.USER_ID_FIELD, "ocid1.user.oc1..aaaaaaaajj7kdinuhkpct4rhsj7gfhyh5dja7ltcd5rrsylrozptssllagyq",
+                                                        OciClientUtils.FINGERPRINT_FIELD, "3a:01:de:90:39:f4:b1:2f:02:75:77:c1:21:f2:20:24",
+                                                        OciClientUtils.PEMFILE_PATH_FIELD, getClass().getClassLoader().getResource("org/opensearch/ml/engine/algorithms/oci/fakeKey.pem").toURI().getPath()))
+                                        .actions(
+                                                List.of(
+                                                        ConnectorAction.builder()
+                                                                .actionType(ConnectorAction.ActionType.DOWNLOAD)
+                                                                .url(embeddedOciObjectStorageServer.getEndpoint() + "/n/idee4xpu3dvm/b/phuong-bucket/o/traced_small_model.zip")
+                                                                .method("GET")
+                                                                .build()))
+                                        .build())
                         .build();
         modelHelper.downloadAndSplit(modelInput, modelId, "1", FunctionName.TEXT_EMBEDDING, actionListener);
         final ArgumentCaptor<Map> argumentCaptor = ArgumentCaptor.forClass(Map.class);
         verify(actionListener).onResponse(argumentCaptor.capture());
         assertNotNull(argumentCaptor.getValue());
         assertNotEquals(0, argumentCaptor.getValue().size());
-    }
-
-    @Test
-    public void testDownloadAndSplitFromOci_whenMissingClientAuthType() {
-        final MLRegisterModelInput modelInput =
-                modelInputBuilder
-                        .url("oci-os://idee4xpu3dvm/phuong-bucket/traced_small_model.zip")
-                        .urlConnectionParameters(Collections.emptyMap())
-                        .ociOsEndpoint(embeddedOciObjectStorageServer.getEndpoint())
-                        .build();
-        modelHelper.downloadAndSplit(modelInput, modelId, "1", FunctionName.TEXT_EMBEDDING, actionListener);
-        final ArgumentCaptor<Exception> argumentCaptor = ArgumentCaptor.forClass(Exception.class);
-        verify(actionListener).onFailure(argumentCaptor.capture());
-        assertEquals(IllegalArgumentException.class, argumentCaptor.getValue().getClass());
-    }
-
-    @Test
-    public void testDownloadAndSplitFromOci_whenHavingInvalidUrl() throws URISyntaxException {
-        final MLRegisterModelInput modelInput =
-                modelInputBuilder
-                        .url("oci-os://idee4xpu3dvm/traced_small_model.zip")
-                        .ociOsEndpoint(embeddedOciObjectStorageServer.getEndpoint())
-                        .urlConnectionParameters(
-                                Map.of(
-                                        OciClientUtils.AUTH_TYPE_FIELD, OciClientAuthType.USER_PRINCIPAL.name(),
-                                        OciClientUtils.REGION_FIELD, "uk-london-1",
-                                        OciClientUtils.TENANT_ID_FIELD, "ocid1.tenancy.oc1..aaaaaaaagkbzgg6lpzrf47xzy4rjoxg4de6ncfiq2rncmjiujvy2hjgxvziq",
-                                        OciClientUtils.USER_ID_FIELD, "ocid1.user.oc1..aaaaaaaajj7kdinuhkpct4rhsj7gfhyh5dja7ltcd5rrsylrozptssllagyq",
-                                        OciClientUtils.FINGERPRINT_FIELD, "3a:01:de:90:39:f4:b1:2f:02:75:77:c1:21:f2:20:24",
-                                        OciClientUtils.PEMFILE_PATH_FIELD, getClass().getClassLoader().getResource("org/opensearch/ml/engine/algorithms/oci/fakeKey.pem").toURI().getPath()))
-                        .build();
-        modelHelper.downloadAndSplit(modelInput, modelId, "1", FunctionName.TEXT_EMBEDDING, actionListener);
-        final ArgumentCaptor<Exception> argumentCaptor = ArgumentCaptor.forClass(Exception.class);
-        verify(actionListener).onFailure(argumentCaptor.capture());
-        assertEquals(IllegalArgumentException.class, argumentCaptor.getValue().getClass());
     }
 
     @Test

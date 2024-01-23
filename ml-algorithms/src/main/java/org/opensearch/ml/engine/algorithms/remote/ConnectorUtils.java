@@ -27,7 +27,10 @@ import software.amazon.awssdk.auth.signer.params.Aws4SignerParams;
 import software.amazon.awssdk.http.SdkHttpFullRequest;
 import software.amazon.awssdk.regions.Region;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -184,5 +187,17 @@ public class ConnectorUtils {
                 .build();
 
         return signer.sign(request, params);
+    }
+
+    public static String getInputStreamContent(InputStream in) throws IOException {
+        StringBuilder body = new StringBuilder();
+        try (final BufferedReader reader =
+                     new BufferedReader(new InputStreamReader(in))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                body.append(line);
+            }
+        }
+        return body.toString();
     }
 }

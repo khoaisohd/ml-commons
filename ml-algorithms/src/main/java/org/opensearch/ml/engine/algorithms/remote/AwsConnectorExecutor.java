@@ -8,14 +8,10 @@ package org.opensearch.ml.engine.algorithms.remote;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
-import org.opensearch.OpenSearchStatusException;
 import org.opensearch.ml.common.connector.AwsConnector;
 import org.opensearch.ml.common.connector.Connector;
 import org.opensearch.ml.common.exception.MLException;
-import org.opensearch.ml.common.input.MLInput;
-import org.opensearch.ml.common.output.model.ModelTensors;
 import org.opensearch.ml.engine.annotation.ConnectorExecutor;
-import org.opensearch.core.rest.RestStatus;
 import org.opensearch.script.ScriptService;
 import software.amazon.awssdk.core.internal.http.loader.DefaultSdkHttpClientBuilder;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -25,18 +21,12 @@ import software.amazon.awssdk.http.HttpExecuteResponse;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.SdkHttpFullRequest;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
-import java.util.List;
 import java.util.Map;
 
-import static org.opensearch.ml.common.CommonValue.REMOTE_SERVICE_ERROR;
 import static org.opensearch.ml.common.connector.ConnectorProtocols.AWS_SIGV4;
-import static org.opensearch.ml.engine.algorithms.remote.ConnectorUtils.processOutput;
 import static software.amazon.awssdk.http.SdkHttpMethod.POST;
 
 @Log4j2
@@ -59,9 +49,8 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
     }
 
      @Override
-     public void invokeRemoteModel(MLInput mlInput, Map<String, String> parameters, String payload, List<ModelTensors> tensorOutputs) {
+     public Response executeRemoteCall(String endpoint, String httpMethod, String payload) {
         try {
-            String endpoint = connector.getPredictEndpoint(parameters);
             RequestBody requestBody = RequestBody.fromString(payload);
 
             SdkHttpFullRequest.Builder builder = SdkHttpFullRequest.builder()
@@ -90,25 +79,7 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
                 body = response.responseBody().get();
             }
 
-            StringBuilder responseBuilder = new StringBuilder();
-            if (body != null) {
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        responseBuilder.append(line);
-                    }
-                }
-            } else {
-                throw new OpenSearchStatusException("No response from model", RestStatus.BAD_REQUEST);
-            }
-            String modelResponse = responseBuilder.toString();
-            if (statusCode < 200 || statusCode >= 300) {
-                throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR + modelResponse, RestStatus.fromCode(statusCode));
-            }
-
-            ModelTensors tensors = processOutput(modelResponse, connector, scriptService, parameters);
-            tensors.setStatusCode(statusCode);
-            tensorOutputs.add(tensors);
+            return new Response(body, statusCode);
         } catch (RuntimeException exception) {
             log.error("Failed to execute predict in aws connector: " + exception.getMessage(), exception);
             throw exception;
