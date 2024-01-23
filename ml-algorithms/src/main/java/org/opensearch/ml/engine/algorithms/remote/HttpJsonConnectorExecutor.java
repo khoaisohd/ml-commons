@@ -9,6 +9,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -39,8 +41,11 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
     @Setter @Getter
     private ScriptService scriptService;
 
+    private final HttpClient httpClient;
+
     public HttpJsonConnectorExecutor(Connector connector) {
         this.connector = (HttpConnector)connector;
+        this.httpClient = MLHttpClientFactory.getCloseableHttpClient();
     }
 
     @Override
@@ -85,13 +90,11 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
             }
 
             AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                try (CloseableHttpClient httpClient = getHttpClient();
-                     CloseableHttpResponse response = httpClient.execute(request)) {
-                    responseRef.set(
-                            new Response(
-                                    response.getEntity().getContent(),
-                                    response.getStatusLine().getStatusCode()));
-                }
+                HttpResponse response = httpClient.execute(request);
+                responseRef.set(
+                        new Response(
+                                response.getEntity().getContent(),
+                                response.getStatusLine().getStatusCode()));
                 return null;
             });
             return responseRef.get();
@@ -102,9 +105,5 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
             log.error("Fail to execute http connector", e);
             throw new MLException("Fail to execute http connector", e);
         }
-    }
-
-    public CloseableHttpClient getHttpClient() {
-        return MLHttpClientFactory.getCloseableHttpClient();
     }
 }
