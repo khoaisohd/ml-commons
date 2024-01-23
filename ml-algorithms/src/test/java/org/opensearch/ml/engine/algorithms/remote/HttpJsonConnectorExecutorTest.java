@@ -86,13 +86,12 @@ public class HttpJsonConnectorExecutorTest {
                 .requestBody("{\"input\": \"${parameters.input}\"}")
                 .build();
         Connector connector = HttpConnector.builder().name("test connector").version("1").protocol("http").actions(Arrays.asList(predictAction)).build();
-        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector));
+        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector, httpClient));
         when(httpClient.execute(any())).thenReturn(response);
         HttpEntity entity = new StringEntity("{\"response\": \"test result\"}");
         when(response.getEntity()).thenReturn(entity);
         StatusLine statusLine = new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 200, "OK");
         when(response.getStatusLine()).thenReturn(statusLine);
-        when(executor.getHttpClient()).thenReturn(httpClient);
         MLInputDataset inputDataSet = RemoteInferenceInputDataSet.builder().parameters(ImmutableMap.of("input", "test input data")).build();
         ModelTensorOutput modelTensorOutput = executor.executePredict(MLInput.builder().algorithm(FunctionName.REMOTE).inputDataset(inputDataSet).build());
         Assert.assertEquals(1, modelTensorOutput.getMlModelOutputs().size());
@@ -115,8 +114,7 @@ public class HttpJsonConnectorExecutorTest {
         StatusLine statusLine = new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 200, "OK");
         when(response.getStatusLine()).thenReturn(statusLine);
         Connector connector = HttpConnector.builder().name("test connector").version("1").protocol("http").actions(Arrays.asList(predictAction)).build();
-        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector));
-        when(executor.getHttpClient()).thenReturn(httpClient);
+        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector, httpClient));
         MLInputDataset inputDataSet = TextDocsInputDataSet.builder().docs(Arrays.asList("test doc1", "test doc2")).build();
         ModelTensorOutput modelTensorOutput = executor.executePredict(MLInput.builder().algorithm(FunctionName.REMOTE).inputDataset(inputDataSet).build());
         Assert.assertEquals(2, modelTensorOutput.getMlModelOutputs().size());
@@ -141,8 +139,7 @@ public class HttpJsonConnectorExecutorTest {
         StatusLine statusLine = new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 429, "OK");
         when(response.getStatusLine()).thenReturn(statusLine);
         Connector connector = HttpConnector.builder().name("test connector").version("1").protocol("http").actions(Arrays.asList(predictAction)).build();
-        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector));
-        when(executor.getHttpClient()).thenReturn(httpClient);
+        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector, httpClient));
         MLInputDataset inputDataSet = TextDocsInputDataSet.builder().docs(Arrays.asList("test doc1", "test doc2")).build();
         executor.executePredict(MLInput.builder().algorithm(FunctionName.REMOTE).inputDataset(inputDataSet).build());
     }
@@ -164,7 +161,7 @@ public class HttpJsonConnectorExecutorTest {
                 .requestBody("{\"input\": ${parameters.input}}")
                 .build();
         Connector connector = HttpConnector.builder().name("test connector").version("1").protocol("http").actions(Arrays.asList(predictAction)).build();
-        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector));
+        HttpJsonConnectorExecutor executor = spy(new HttpJsonConnectorExecutor(connector, httpClient));
         executor.setScriptService(scriptService);
         when(httpClient.execute(any())).thenReturn(response);
         String modelResponse = "{\n" + "    \"object\": \"list\",\n" + "    \"data\": [\n" + "        {\n"
@@ -179,7 +176,6 @@ public class HttpJsonConnectorExecutorTest {
         when(response.getStatusLine()).thenReturn(statusLine);
         HttpEntity entity = new StringEntity(modelResponse);
         when(response.getEntity()).thenReturn(entity);
-        when(executor.getHttpClient()).thenReturn(httpClient);
         MLInputDataset inputDataSet = TextDocsInputDataSet.builder().docs(Arrays.asList("test doc1", "test doc2")).build();
         ModelTensorOutput modelTensorOutput = executor.executePredict(MLInput.builder().algorithm(FunctionName.REMOTE).inputDataset(inputDataSet).build());
         Assert.assertEquals(2, modelTensorOutput.getMlModelOutputs().size());

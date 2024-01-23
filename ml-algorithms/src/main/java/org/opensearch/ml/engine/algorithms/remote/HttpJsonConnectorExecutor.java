@@ -43,9 +43,15 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
 
     private final HttpClient httpClient;
 
-    public HttpJsonConnectorExecutor(Connector connector) {
+    public HttpJsonConnectorExecutor(Connector connector, HttpClient httpClient) {
         this.connector = (HttpConnector)connector;
-        this.httpClient = MLHttpClientFactory.getCloseableHttpClient();
+        this.httpClient = httpClient;
+    }
+
+    public HttpJsonConnectorExecutor(Connector connector) {
+        this(
+                connector,
+                MLHttpClientFactory.getCloseableHttpClient());
     }
 
     @Override
