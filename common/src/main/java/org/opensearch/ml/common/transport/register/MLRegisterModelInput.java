@@ -200,7 +200,7 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
         out.writeOptionalString(url);
         if (urlConnector != null) {
             out.writeBoolean(true);
-            connector.writeTo(out);
+            urlConnector.writeTo(out);
         } else {
             out.writeBoolean(false);
         }

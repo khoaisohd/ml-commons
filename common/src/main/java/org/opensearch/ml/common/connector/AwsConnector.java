@@ -47,6 +47,11 @@ public class AwsConnector extends HttpConnector {
         validate();
     }
 
+    public AwsConnector(String protocol, StreamInput input) throws IOException {
+        super(protocol, input);
+        validate();
+    }
+
     private void validate() {
         if (credential == null || !credential.containsKey(ACCESS_KEY_FIELD) || !credential.containsKey(SECRET_KEY_FIELD)) {
             throw new IllegalArgumentException("Missing credential");

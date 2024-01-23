@@ -44,6 +44,11 @@ public class OciConnector extends HttpConnector {
         validate();
     }
 
+    public OciConnector(String protocol, StreamInput input) throws IOException {
+        super(protocol, input);
+        validate();
+    }
+
     private void validate() {
         OciClientUtils.validateConnectionParameters(parameters);
     }
