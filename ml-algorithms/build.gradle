@@ -71,8 +71,7 @@ dependencies {
     implementation 'com.jayway.jsonpath:json-path:2.8.0'
     implementation group: 'org.json', name: 'json', version: '20230227'
 
-    // OCI SDK to download file from OCI Object Storage
-    implementation("com.oracle.oci.sdk:oci-java-sdk-objectstorage:2.38.0") {
+    implementation("com.oracle.oci.sdk:oci-java-sdk-common:2.38.0") {
         // Exclude org.bouncycastle:bcprov-jdk15on to avoid conflict with bcprov-ext-jdk18on
         // that is provided from com.amazonaws:aws-encryption-sdk-java
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk15on'

@@ -7,28 +7,22 @@ package org.opensearch.ml.engine;
 
 import ai.djl.training.util.DownloadUtils;
 import ai.djl.training.util.ProgressBar;
-import com.google.common.base.Preconditions;
 import com.google.gson.stream.JsonReader;
-import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
-import com.oracle.bmc.objectstorage.ObjectStorage;
-import com.oracle.bmc.objectstorage.ObjectStorageClient;
-import com.oracle.bmc.objectstorage.requests.GetObjectRequest;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.ml.common.FunctionName;
+import org.opensearch.ml.common.connector.Connector;
 import org.opensearch.ml.common.model.MLModelConfig;
 import org.opensearch.ml.common.model.MLModelFormat;
 import org.opensearch.ml.common.model.TextEmbeddingModelConfig;
 import org.opensearch.ml.common.transport.register.MLRegisterModelInput;
-import org.opensearch.ml.common.oci.OciClientUtils;
-import org.opensearch.ml.engine.algorithms.oci.OciAuthProviderFactory;
+import org.opensearch.ml.engine.algorithms.remote.RemoteConnectorExecutor;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -207,14 +201,14 @@ public class ModelHelper {
                 final MLModelFormat modelFormat = registerModelInput.getModelFormat();
                 final String modelContentHash = registerModelInput.getHashValue();
                 final String url = registerModelInput.getUrl();
-                final URI uri = new URI(url);
+                final Connector urlConnector = registerModelInput.getUrlConnector();
                 Path registerModelPath = mlEngine.getRegisterModelPath(taskId, modelName, version);
                 String modelPath = registerModelPath +".zip";
                 Path modelPartsPath = registerModelPath.resolve("chunks");
                 File modelZipFile = new File(modelPath);
                 log.debug("download model to file {}", modelZipFile.getAbsolutePath());
-                if (OCI_OS_SCHEME.equals(uri.getScheme())) {
-                    downloadFromOciObjectStorage(registerModelInput, uri, modelPath);
+                if (urlConnector != null) {
+                    downloadThroughUrlConnector(registerModelInput, modelPath);
                 } else {
                     DownloadUtils.download(url, modelPath, new ProgressBar());
                 }
@@ -240,44 +234,16 @@ public class ModelHelper {
         }
     }
 
-    /**
-     * Download model from object storage
-     * uri format: oci-os://{namespace}/{bucketName}/{objectName}
-     */
-    private void downloadFromOciObjectStorage(
+    private void downloadThroughUrlConnector(
             final MLRegisterModelInput registerModelInput,
-            final URI uri,
             final String targetFilePath) {
-        final String namespace = uri.getHost();
-        // url path is expected to have format /{bucketName}/{objectName}
-        final String[] parts = uri.getPath().split("/");
-        Preconditions.checkArgument(
-                parts.length == 3, "Invalid OCI object storage URI %s", registerModelInput.getUrl());
-        final String bucket = parts[1];
-        final String object = parts[2];
+        final RemoteConnectorExecutor connectorExecutor =
+                MLEngineClassLoader.initInstance(
+                        registerModelInput.getUrlConnector().getProtocol(),
+                        registerModelInput.getUrlConnector(), Connector.class);
 
-        log.debug(
-                "Downloading model, endpoint: {}, namespace: {}, bucket: {}, object: {}",
-                registerModelInput.getOciOsEndpoint(),
-                namespace,
-                bucket,
-                object);
-
-        final BasicAuthenticationDetailsProvider authenticationDetails =
-                OciAuthProviderFactory.buildAuthenticationDetailsProvider(
-                        registerModelInput.getUrlConnectionParameters());
-
-        try (final ObjectStorage objectStorage =
-                     ObjectStorageClient
-                             .builder()
-                             .endpoint(registerModelInput.getOciOsEndpoint())
-                             .build(authenticationDetails);
-             final InputStream inStream = objectStorage.getObject(
-                     GetObjectRequest.builder()
-                             .namespaceName(namespace)
-                             .bucketName(bucket)
-                             .objectName(object)
-                             .build()).getInputStream()) {
+        try {
+            final InputStream inStream = connectorExecutor.executeDownload(Map.of());
             final File destinationFile = new File(targetFilePath);
             FileUtils.forceMkdir(destinationFile.getParentFile());
             Files.copy(inStream, destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);

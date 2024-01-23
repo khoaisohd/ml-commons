@@ -6,6 +6,7 @@
 package org.opensearch.ml.engine.algorithms.remote;
 
 import com.google.common.collect.ImmutableMap;
+import lombok.SneakyThrows;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -26,7 +27,9 @@ import org.opensearch.ml.common.input.MLInput;
 import org.opensearch.ml.common.output.model.ModelTensors;
 import org.opensearch.script.ScriptService;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -188,6 +191,13 @@ public class ConnectorUtilsTest {
         Assert.assertEquals(-0.014555434, tensors.getMlModelTensors().get(0).getData()[0]);
         Assert.assertEquals(-0.0002135904, tensors.getMlModelTensors().get(0).getData()[1]);
         Assert.assertEquals(0.0035105038, tensors.getMlModelTensors().get(0).getData()[2]);
+    }
+
+    @SneakyThrows
+    @Test
+    public void getInputStreamContent() {
+        final InputStream in = new ByteArrayInputStream("content".getBytes());
+        Assert.assertEquals("content", ConnectorUtils.getInputStreamContent(in));
     }
 
     private void processInput_TextDocsInputDataSet_PreprocessFunction(String requestBody, List<String> inputs, String expectedProcessedInput, String preProcessName, String resultKey) {

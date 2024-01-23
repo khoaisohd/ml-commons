@@ -182,6 +182,14 @@ public class ConnectorAction implements ToXContentObject, Writeable {
     }
 
     public enum ActionType {
-        PREDICT
+        /**
+         * Used for remote inference
+         */
+        PREDICT,
+
+        /**
+         * Used for download model remotely
+         */
+        DOWNLOAD
     }
 }
