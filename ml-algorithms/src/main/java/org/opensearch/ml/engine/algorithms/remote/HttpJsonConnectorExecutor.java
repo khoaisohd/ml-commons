@@ -49,9 +49,7 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
     }
 
     public HttpJsonConnectorExecutor(Connector connector) {
-        this(
-                connector,
-                MLHttpClientFactory.getCloseableHttpClient());
+        this(connector, MLHttpClientFactory.getCloseableHttpClient());
     }
 
     @Override
