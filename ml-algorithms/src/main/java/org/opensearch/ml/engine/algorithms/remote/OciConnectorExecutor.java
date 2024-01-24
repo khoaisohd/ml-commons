@@ -62,7 +62,7 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
      public void invokeRemoteModel(
              MLInput mlInput, Map<String, String> parameters, String payload, List<ModelTensors> tensorOutputs) {
           final BasicAuthenticationDetailsProvider provider =
-                 OciAuthProviderFactory.buildAuthenticationDetailsProvider(connector.getParameters());
+                 OciAuthProviderFactory.buildAuthenticationDetailsProvider(connector.getOciClientAuthConfig());
 
           final RestClientFactory restClientFactory = RestClientFactoryBuilder.builder().build();
           final RequestSigner requestSigner = DefaultRequestSigner.createRequestSigner(provider);
