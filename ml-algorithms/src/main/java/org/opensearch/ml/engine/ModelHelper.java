@@ -21,7 +21,7 @@ import org.opensearch.ml.common.model.MLModelConfig;
 import org.opensearch.ml.common.model.MLModelFormat;
 import org.opensearch.ml.common.model.TextEmbeddingModelConfig;
 import org.opensearch.ml.common.transport.register.MLRegisterModelInput;
-import org.opensearch.ml.common.oci.OciClientUtils;
+import org.opensearch.ml.common.oci.OciClientAuthConfig;
 import org.opensearch.ml.engine.algorithms.oci.OciAuthProviderFactory;
 
 import java.io.File;
@@ -263,15 +263,23 @@ public class ModelHelper {
                 bucket,
                 object);
 
-        final BasicAuthenticationDetailsProvider authenticationDetails =
-                OciAuthProviderFactory.buildAuthenticationDetailsProvider(
-                        registerModelInput.getUrlConnectionParameters());
+        final OciClientAuthConfig ociClientAuthConfig =
+                new OciClientAuthConfig(
+                        registerModelInput.getOciClientAuthType(),
+                        registerModelInput.getOciClientAuthTenantId(),
+                        registerModelInput.getOciClientAuthUserId(),
+                        registerModelInput.getOciClientAuthRegion(),
+                        registerModelInput.getOciClientAuthFingerprint(),
+                        registerModelInput.getOciClientAuthPemfilepath());
+        final BasicAuthenticationDetailsProvider authenticationDetailsProvider =
+                OciAuthProviderFactory.buildAuthenticationDetailsProvider(ociClientAuthConfig);
 
         try (final ObjectStorage objectStorage =
                      ObjectStorageClient
                              .builder()
                              .endpoint(registerModelInput.getOciOsEndpoint())
-                             .build(authenticationDetails);
+                             .build(authenticationDetailsProvider);
+
              final InputStream inStream = objectStorage.getObject(
                      GetObjectRequest.builder()
                              .namespaceName(namespace)
