@@ -3,7 +3,6 @@ package org.opensearch.ml.common.connector;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.commons.authuser.User;
@@ -24,7 +23,6 @@ import static org.opensearch.ml.common.connector.ConnectorProtocols.OCI_SIGV1;
  * Connector to OCI Genai
  */
 @Log4j2
-@NoArgsConstructor
 @EqualsAndHashCode
 @org.opensearch.ml.common.annotation.Connector(OCI_SIGV1)
 public class OciConnector extends HttpConnector {
@@ -41,40 +39,25 @@ public class OciConnector extends HttpConnector {
     public static final String REGION_FIELD = "region";
 
     @Getter
-    private OciClientAuthConfig ociClientAuthConfig;
+    private final OciClientAuthConfig ociClientAuthConfig;
 
     @Builder(builderMethodName = "ociConnectorBuilder")
     public OciConnector(String name, String description, String version, String protocol,
                         Map<String, String> parameters, Map<String, String> credential, List<ConnectorAction> actions,
                         List<String> backendRoles, AccessMode accessMode, User owner) {
         super(name, description, version, protocol, parameters, credential, actions, backendRoles, accessMode, owner);
-        initOciClientAuthConfigAndValidate();
+        this.ociClientAuthConfig = initOciClientAuthConfigAndValidate(parameters);
     }
 
     public OciConnector(String protocol, XContentParser parser) throws IOException {
         super(protocol, parser);
-        initOciClientAuthConfigAndValidate();
+        this.ociClientAuthConfig = initOciClientAuthConfigAndValidate(parameters);
     }
 
 
     public OciConnector(StreamInput input) throws IOException {
         super(input);
-        initOciClientAuthConfigAndValidate();
-    }
-
-    private void initOciClientAuthConfigAndValidate() {
-        if (!parameters.containsKey(AUTH_TYPE_FIELD)) {
-            throw new IllegalArgumentException("Missing auth type");
-        }
-
-        this.ociClientAuthConfig = new OciClientAuthConfig(
-                OciClientAuthType.from(
-                        parameters.get(AUTH_TYPE_FIELD).toUpperCase(Locale.ROOT)),
-                parameters.get(TENANT_ID_FIELD),
-                parameters.get(USER_ID_FIELD),
-                parameters.get(REGION_FIELD),
-                parameters.get(FINGERPRINT_FIELD),
-                parameters.get(PEMFILE_PATH_FIELD));
+        this.ociClientAuthConfig = initOciClientAuthConfigAndValidate(parameters);
     }
 
     @Override
@@ -86,5 +69,20 @@ public class OciConnector extends HttpConnector {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static OciClientAuthConfig initOciClientAuthConfigAndValidate(Map<String, String> parameters) {
+        if (!parameters.containsKey(AUTH_TYPE_FIELD)) {
+            throw new IllegalArgumentException("Missing auth type");
+        }
+
+        return new OciClientAuthConfig(
+                OciClientAuthType.from(
+                        parameters.get(AUTH_TYPE_FIELD).toUpperCase(Locale.ROOT)),
+                parameters.get(TENANT_ID_FIELD),
+                parameters.get(USER_ID_FIELD),
+                parameters.get(REGION_FIELD),
+                parameters.get(FINGERPRINT_FIELD),
+                parameters.get(PEMFILE_PATH_FIELD));
     }
 }
