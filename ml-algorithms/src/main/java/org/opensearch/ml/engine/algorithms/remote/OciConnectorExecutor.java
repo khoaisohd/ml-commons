@@ -21,7 +21,6 @@ import org.opensearch.OpenSearchStatusException;
 import org.opensearch.core.rest.RestStatus;
 import org.opensearch.ml.common.connector.Connector;
 import org.opensearch.ml.common.connector.OciConnector;
-import org.opensearch.ml.common.exception.MLException;
 import org.opensearch.ml.common.input.MLInput;
 import org.opensearch.ml.common.output.model.ModelTensors;
 import org.opensearch.ml.engine.algorithms.oci.OciAuthProviderFactory;
@@ -90,7 +89,11 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
               }
 
               if (statusCode < 200 || statusCode >= 300) {
-                  throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR + jsonBody, RestStatus.fromCode(statusCode));
+                  final String opcRequestId = response.getHeaderString("opc-request-id");
+
+                  throw new OpenSearchStatusException(
+                          REMOTE_SERVICE_ERROR + jsonBody + " opc request id: " + opcRequestId,
+                          RestStatus.fromCode(statusCode));
               } else {
                   final ModelTensors tensors = processOutput(jsonBody.toString(), connector, scriptService, parameters);
                   tensors.setStatusCode(statusCode);
