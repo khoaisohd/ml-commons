@@ -48,9 +48,6 @@ public class OciConnector extends HttpConnector {
                         Map<String, String> parameters, Map<String, String> credential, List<ConnectorAction> actions,
                         List<String> backendRoles, AccessMode accessMode, User owner) {
         super(name, description, version, protocol, parameters, credential, actions, backendRoles, accessMode, owner);
-        if (!parameters.containsKey(AUTH_TYPE_FIELD)) {
-            throw new IllegalArgumentException("Missing auth type");
-        }
         initOciClientAuthConfigAndValidate();
     }
 
@@ -66,7 +63,10 @@ public class OciConnector extends HttpConnector {
     }
 
     private void initOciClientAuthConfigAndValidate() {
-        // validation is done in the constructor of OciClientAuthConfig
+        if (!parameters.containsKey(AUTH_TYPE_FIELD)) {
+            throw new IllegalArgumentException("Missing auth type");
+        }
+
         this.ociClientAuthConfig = new OciClientAuthConfig(
                 OciClientAuthType.from(
                         parameters.get(AUTH_TYPE_FIELD).toUpperCase(Locale.ROOT)),
