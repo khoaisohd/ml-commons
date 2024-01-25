@@ -212,7 +212,6 @@ import org.opensearch.watcher.ResourceWatcherService;
 
 import com.google.common.collect.ImmutableList;
 
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import lombok.SneakyThrows;
 
@@ -471,8 +470,7 @@ public class MachineLearningPlugin extends Plugin implements ActionPlugin, Searc
 
         // TODO : Temporary workaround as we current code does not handle SAN certs properly
         // Tuning off ssl validations
-        HostnameVerifier hostnameVerifier = (hostname, session) -> true;
-        HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
+        HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
 
         // TODO move this into MLFeatureEnabledSetting
         // search processor factories below will get BooleanSupplier that supplies the current value being updated through this.
@@ -697,7 +695,9 @@ public class MachineLearningPlugin extends Plugin implements ActionPlugin, Searc
                 MLCommonsSettings.ML_COMMONS_UPDATE_CONNECTOR_ENABLED,
                 MLCommonsSettings.ML_COMMONS_MEMORY_FEATURE_ENABLED,
                 MLCommonsSettings.ML_COMMONS_RAG_PIPELINE_FEATURE_ENABLED,
-                MLCommonsSettings.OPEN_SEARCH_PRETRAINED_MODEL_REPO
+                MLCommonsSettings.ML_COMMON_MODEL_REPO_ENDPOINT,
+                MLCommonsSettings.ML_COMMON_MODEL_METALIST_ENDPOINT
+
             );
         return settings;
     }

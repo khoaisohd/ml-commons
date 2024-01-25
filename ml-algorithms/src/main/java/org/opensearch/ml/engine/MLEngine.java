@@ -33,12 +33,12 @@ import java.util.Map;
 @Log4j2
 public class MLEngine {
 
-    public static final Setting<String> OPENSEARCH_MODEL_REPO_ENDPOINT =
+    public static final Setting<String> ML_COMMON_MODEL_REPO_ENDPOINT =
             Setting.simpleString(
                     "plugins.ml_commons.model_repo_endpoint",
                     Setting.Property.NodeScope,
                     Setting.Property.Dynamic);
-    public static final Setting<String> OPEN_SEARCH_MODEL_METALIST_ENDPOINT =
+    public static final Setting<String> ML_COMMON_MODEL_METALIST_ENDPOINT =
             Setting.simpleString(
                     "plugins.ml_commons.model_metalist_endpoint",
                     Setting.Property.NodeScope,
@@ -47,8 +47,8 @@ public class MLEngine {
 
     public static final String REGISTER_MODEL_FOLDER = "register";
     public static final String DEPLOY_MODEL_FOLDER = "deploy";
-    private volatile String modelRepoEndpoint;
-    private volatile String modelMetalistEndpoint;
+    private final String modelRepoEndpoint;
+    private final String modelMetalistEndpoint;
 
     @Getter
     private final Path mlConfigPath;
@@ -64,8 +64,8 @@ public class MLEngine {
         this.mlModelsCachePath = mlCachePath.resolve("models_cache");
         this.mlConfigPath = mlCachePath.resolve("config");
         this.encryptor = encryptor;
-        this.modelRepoEndpoint = OPENSEARCH_MODEL_REPO_ENDPOINT.get(settings);
-        this.modelMetalistEndpoint = OPEN_SEARCH_MODEL_METALIST_ENDPOINT.get(settings);
+        this.modelRepoEndpoint = ML_COMMON_MODEL_REPO_ENDPOINT.get(settings);
+        this.modelMetalistEndpoint = ML_COMMON_MODEL_METALIST_ENDPOINT.get(settings);
 
         //TODO - This is a hack and can be fixed when djl.ai build has up to date logic
         // User might want to load their own libstdc++.so.6 instead of one provided by djl
