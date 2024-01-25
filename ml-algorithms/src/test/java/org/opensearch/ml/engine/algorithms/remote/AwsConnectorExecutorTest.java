@@ -17,6 +17,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.opensearch.OpenSearchException;
 import org.opensearch.OpenSearchStatusException;
 import org.opensearch.ml.common.FunctionName;
 import org.opensearch.ml.common.connector.AwsConnector;
@@ -120,7 +121,7 @@ public class AwsConnectorExecutorTest {
 
     @Test
     public void executePredict_RemoteInferenceInput_InvalidToken() throws IOException {
-        exceptionRule.expect(OpenSearchStatusException.class);
+        exceptionRule.expect(OpenSearchException.class);
         exceptionRule.expectMessage("{\"message\":\"The security token included in the request is invalid\"}");
         String jsonString = "{\"message\":\"The security token included in the request is invalid\"}";
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());

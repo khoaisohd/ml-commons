@@ -8,6 +8,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.opensearch.OpenSearchException;
 import org.opensearch.OpenSearchStatusException;
 import org.opensearch.ml.common.FunctionName;
 import org.opensearch.ml.common.connector.Connector;
@@ -93,7 +94,7 @@ public class OciConnectorExecutorTest {
     @Test
     @SneakyThrows
     public void executePredict_RemoteInferenceInput_WrongEndpoint() {
-        exceptionRule.expect(OpenSearchStatusException.class);
+        exceptionRule.expect(OpenSearchException.class);
 
         final ConnectorAction predictAction = ConnectorAction.builder()
                 .actionType(ConnectorAction.ActionType.PREDICT)

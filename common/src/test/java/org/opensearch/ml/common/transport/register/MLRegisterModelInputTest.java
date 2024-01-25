@@ -18,6 +18,7 @@ import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.ml.common.FunctionName;
+import org.opensearch.ml.common.connector.ConnectorAction;
 import org.opensearch.ml.common.connector.HttpConnector;
 import org.opensearch.ml.common.connector.HttpConnectorTest;
 import org.opensearch.ml.common.model.MLModelConfig;
@@ -28,6 +29,7 @@ import org.opensearch.search.SearchModule;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
@@ -121,6 +123,30 @@ public class MLRegisterModelInputTest {
                 .modelFormat(MLModelFormat.ONNX)
                 .modelConfig(null)
                 .url(url)
+                .build();
+    }
+
+    @Test
+    public void constructor_WrongUrlConnector() {
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage("Missing DOWNLOAD action from URL connector");
+        MLRegisterModelInput.builder()
+                .modelName(modelName)
+                .version(version)
+                .modelGroupId(modelGroupId)
+                .modelFormat(MLModelFormat.ONNX)
+                .modelConfig(config)
+                .urlConnector(HttpConnector.builder()
+                        .protocol("http")
+                        .actions(
+                                List.of(
+                                        ConnectorAction
+                                                .builder()
+                                                .actionType(ConnectorAction.ActionType.PREDICT)
+                                                .method("GET")
+                                                .url("url")
+                                                .build()))
+                        .build())
                 .build();
     }
 

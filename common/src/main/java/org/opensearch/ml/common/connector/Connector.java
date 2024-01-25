@@ -55,14 +55,29 @@ public interface Connector extends ToXContentObject, Writeable {
     List<ConnectorAction> getActions();
     String getPredictEndpoint(Map<String, String> parameters);
 
+    /**
+     * @param actionType the action type
+     * @param parameters the parameters
+     * @return the endpoint for particular action
+     */
     String getEndpoint(ConnectorAction.ActionType actionType, Map<String, String> parameters);
 
     String getPredictHttpMethod();
 
+    /**
+     * @param actionType the action type
+     * @return the http method for particular action
+     */
     String getHttpMethod(ConnectorAction.ActionType actionType);
 
     <T> T createPredictPayload(Map<String, String> parameters);
 
+    /**
+     *
+     * @param actionType the action type
+     * @param parameters the parameter
+     * @return the payload for particular action
+     */
     <T> T createPayload(ConnectorAction.ActionType actionType, Map<String, String> parameters);
 
     void decrypt(Function<String, String> function);
@@ -72,6 +87,10 @@ public interface Connector extends ToXContentObject, Writeable {
 
     Optional<ConnectorAction> findPredictAction();
 
+    /**
+     * @param actionType the action type
+     * @return the action for particular type
+     */
     Optional<ConnectorAction> findAction(ConnectorAction.ActionType actionType);
 
     void removeCredential();

@@ -95,8 +95,8 @@ public interface RemoteConnectorExecutor {
                 tensors.setStatusCode(statusCode);
                 tensorOutputs.add(tensors);
             }
-        } catch (IOException | RuntimeException exception) {
-            throw new OpenSearchException("Failed to invoke connection " + exception.getMessage(), exception);
+        } catch (IOException | RuntimeException ex) {
+            throw new OpenSearchException("Failed execute predict action " + ex.getMessage(), ex);
         }
     }
 
@@ -122,15 +122,29 @@ public interface RemoteConnectorExecutor {
                 return response.getBody();
             }
         } catch (IOException | RuntimeException exception) {
-            throw new OpenSearchException("Failed to invoke connection " + exception.getMessage(), exception);
+            throw new OpenSearchException("Failed execute download action " + exception.getMessage(), exception);
         }
     }
 
+    /**
+     * Execute call on a remote service via http protocol
+     * @param endpoint the remote service endpoint
+     * @param httpMethod the http method
+     * @param payload the request payload
+     * @return the {@link Response}
+     */
     Response executeRemoteCall(String endpoint, String httpMethod, String payload);
 
     @Data
     class Response {
+        /**
+         * The response body
+         */
         private final InputStream body;
+
+        /**
+         * The response status code
+         */
         private final int statusCode;
     }
 }

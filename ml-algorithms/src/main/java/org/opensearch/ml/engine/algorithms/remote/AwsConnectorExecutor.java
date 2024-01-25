@@ -8,6 +8,8 @@ package org.opensearch.ml.engine.algorithms.remote;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
+import org.opensearch.OpenSearchStatusException;
+import org.opensearch.core.rest.RestStatus;
 import org.opensearch.ml.common.connector.AwsConnector;
 import org.opensearch.ml.common.connector.Connector;
 import org.opensearch.ml.common.exception.MLException;
@@ -77,6 +79,10 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
             AbortableInputStream body = null;
             if (response.responseBody().isPresent()) {
                 body = response.responseBody().get();
+            }
+
+            if (body == null) {
+                throw new OpenSearchStatusException("No response from model", RestStatus.BAD_REQUEST);
             }
 
             return new Response(body, statusCode);

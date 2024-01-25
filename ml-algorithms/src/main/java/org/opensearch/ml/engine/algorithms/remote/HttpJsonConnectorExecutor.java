@@ -92,7 +92,7 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
             }
 
             AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                HttpResponse response = httpClient.execute(request);
+                final HttpResponse response = httpClient.execute(request);
                 responseRef.set(
                         new Response(
                                 response.getEntity().getContent(),

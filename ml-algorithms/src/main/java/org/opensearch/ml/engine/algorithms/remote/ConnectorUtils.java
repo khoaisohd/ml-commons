@@ -189,8 +189,13 @@ public class ConnectorUtils {
         return signer.sign(request, params);
     }
 
+    /**
+     *
+     * @param in the input stream
+     * @return content from input stream
+     */
     public static String getInputStreamContent(InputStream in) throws IOException {
-        StringBuilder body = new StringBuilder();
+        final StringBuilder body = new StringBuilder();
         try (final BufferedReader reader =
                      new BufferedReader(new InputStreamReader(in))) {
             String line;

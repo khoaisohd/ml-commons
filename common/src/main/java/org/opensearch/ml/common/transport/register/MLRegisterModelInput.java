@@ -16,6 +16,7 @@ import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.ml.common.AccessMode;
 import org.opensearch.ml.common.FunctionName;
 import org.opensearch.ml.common.connector.Connector;
+import org.opensearch.ml.common.connector.ConnectorAction;
 import org.opensearch.ml.common.model.MLModelConfig;
 import org.opensearch.ml.common.model.MLModelFormat;
 import org.opensearch.ml.common.model.MetricsCorrelationModelConfig;
@@ -61,6 +62,10 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
     private String version;
     private String description;
     private String url;
+
+    /**
+     *  url connector allows models to be registered remotely through connector with "DOWNLOAD" action
+     */
     private Connector urlConnector;
     private String ociClientAuthTenantId;
     private String ociClientAuthUserId;
@@ -129,6 +134,9 @@ public class MLRegisterModelInput implements ToXContentObject, Writeable {
         this.description = description;
         this.url = url;
         this.urlConnector = urlConnector;
+        if (urlConnector != null && urlConnector.findAction(ConnectorAction.ActionType.DOWNLOAD).isEmpty()) {
+            throw new IllegalArgumentException("Missing DOWNLOAD action from URL connector");
+        }
         this.ociClientAuthTenantId = ociClientAuthTenantId;
         this.ociClientAuthUserId = ociClientAuthUserId;
         this.ociClientAuthRegion = ociClientAuthRegion;

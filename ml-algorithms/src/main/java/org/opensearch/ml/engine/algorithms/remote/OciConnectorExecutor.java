@@ -22,6 +22,8 @@ import org.opensearch.ml.common.connector.OciConnector;
 import org.opensearch.ml.engine.algorithms.oci.OciAuthProviderFactory;
 import org.opensearch.ml.engine.annotation.ConnectorExecutor;
 import org.opensearch.script.ScriptService;
+
+import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import java.io.InputStream;
 import java.util.Collections;
@@ -74,6 +76,19 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
          return new Response((InputStream) response.getEntity(), response.getStatus());
     }
 
+    /**
+     *
+     * RestClient is a general wrapper of {@link Client} to talk to OCI services however it has a poor design
+     * and to support calling multiple endpoints. Basically when RestClient::setEndpoint is call it create a
+     * new instance of WebTarget wit that endpoint, but instead of return that instance, customer need to make
+     * another call that WebTarget instance.
+     *
+     * <p>For now let make it synchronize for calling setEndpoint and getBaseTarget to avoid race condition.
+     * Furthermore, it is also pretty cheap compare to calling remote endpoint
+     *
+     * @param endpoint the web target endpoint
+     * @return web target for particular endpoint
+     */
     @Synchronized
     private WebTarget getWebTarget(String endpoint) {
         restClient.setEndpoint(endpoint);
