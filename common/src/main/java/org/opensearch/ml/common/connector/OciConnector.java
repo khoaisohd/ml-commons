@@ -9,10 +9,10 @@ import org.opensearch.commons.authuser.User;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.ml.common.AccessMode;
-import org.opensearch.ml.common.oci.OciClientUtils;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.opensearch.ml.common.connector.ConnectorProtocols.OCI_SIGV1;
@@ -25,6 +25,18 @@ import static org.opensearch.ml.common.connector.ConnectorProtocols.OCI_SIGV1;
 @EqualsAndHashCode
 @org.opensearch.ml.common.annotation.Connector(OCI_SIGV1)
 public class OciConnector extends HttpConnector {
+    public static final String AUTH_TYPE_FIELD = "auth_type";
+
+    public static final String TENANT_ID_FIELD = "tenant_id";
+
+    public static final String USER_ID_FIELD = "user_id";
+
+    public static final String FINGERPRINT_FIELD = "fingerprint";
+
+    public static final String PEMFILE_PATH_FIELD = "pemfile_path";
+
+    public static final String REGION_FIELD = "region";
+
     @Builder(builderMethodName = "ociConnectorBuilder")
     public OciConnector(String name, String description, String version, String protocol,
                         Map<String, String> parameters, Map<String, String> credential, List<ConnectorAction> actions,
@@ -50,7 +62,38 @@ public class OciConnector extends HttpConnector {
     }
 
     private void validate() {
-        OciClientUtils.validateConnectionParameters(parameters);
+        if (parameters == null) {
+            throw new IllegalArgumentException("Missing credential");
+        }
+        if (!parameters.containsKey(AUTH_TYPE_FIELD)) {
+            throw new IllegalArgumentException("Missing auth type");
+        }
+
+        final OciClientAuthType authType =
+                OciClientAuthType.from(
+                        parameters.get(AUTH_TYPE_FIELD).toUpperCase(Locale.ROOT));
+
+        if (authType == OciClientAuthType.USER_PRINCIPAL) {
+            if (!parameters.containsKey(TENANT_ID_FIELD)) {
+                throw new IllegalArgumentException("Missing tenant id");
+            }
+
+            if (!parameters.containsKey(USER_ID_FIELD)) {
+                throw new IllegalArgumentException("Missing user id");
+            }
+
+            if (!parameters.containsKey(FINGERPRINT_FIELD)) {
+                throw new IllegalArgumentException("Missing fingerprint");
+            }
+
+            if (!parameters.containsKey(PEMFILE_PATH_FIELD)) {
+                throw new IllegalArgumentException("Missing pemfile");
+            }
+
+            if (!parameters.containsKey(REGION_FIELD)) {
+                throw new IllegalArgumentException("Missing region");
+            }
+        }
     }
 
     @Override
@@ -61,6 +104,24 @@ public class OciConnector extends HttpConnector {
             return new OciConnector(streamInput);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * The type of authentication supported by OCI. For more details please visit doc
+     * https://docs.public.oneportal.content.oci.oraclecloud.com/en-us/iaas/Content/API/Concepts/sdk_authentication_methods.htm
+     */
+    public enum OciClientAuthType {
+        RESOURCE_PRINCIPAL,
+        INSTANCE_PRINCIPAL,
+        USER_PRINCIPAL;
+
+        public static OciClientAuthType from(String value) {
+            try {
+                return OciClientAuthType.valueOf(value);
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Wrong OCI client auth type");
+            }
         }
     }
 }
