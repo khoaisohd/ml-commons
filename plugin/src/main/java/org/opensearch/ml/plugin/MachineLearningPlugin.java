@@ -469,7 +469,7 @@ public class MachineLearningPlugin extends Plugin implements ActionPlugin, Searc
         );
 
         // TODO : Temporary workaround as we current code does not handle SAN certs properly
-        // Tuning off ssl validations
+        //  Turning off host name validation
         HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
 
         // TODO move this into MLFeatureEnabledSetting
