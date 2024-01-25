@@ -7,7 +7,6 @@ package org.opensearch.ml.engine;
 
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
-
 import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.ml.common.FunctionName;
