@@ -64,7 +64,7 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
 
 
      @Override
-     public Response executeHttpCall(String endpoint, String httpMethod, String payload) {
+     public HttpResponse executeHttpCall(String endpoint, String httpMethod, String payload) {
          final WebTarget target = getWebTarget(endpoint);
          final WrappedInvocationBuilder wrappedIb = new WrappedInvocationBuilder(target.request(), target.getUri());
          final javax.ws.rs.core.Response response;
@@ -78,7 +78,7 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
              default:
                  throw new IllegalArgumentException("unsupported http method");
          }
-         return new Response((InputStream) response.getEntity(), response.getStatus());
+         return new HttpResponse((InputStream) response.getEntity(), response.getStatus());
     }
 
     /**

@@ -51,7 +51,7 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
     }
 
      @Override
-     public Response executeHttpCall(String endpoint, String httpMethod, String payload) {
+     public HttpResponse executeHttpCall(String endpoint, String httpMethod, String payload) {
         try {
             RequestBody requestBody = RequestBody.fromString(payload);
 
@@ -85,7 +85,7 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
                 throw new OpenSearchStatusException("No response from model", RestStatus.BAD_REQUEST);
             }
 
-            return new Response(body, statusCode);
+            return new HttpResponse(body, statusCode);
         } catch (RuntimeException exception) {
             log.error("Failed to execute predict in aws connector: " + exception.getMessage(), exception);
             throw exception;

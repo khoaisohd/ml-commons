@@ -9,7 +9,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -51,9 +50,9 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
     }
 
     @Override
-    public Response executeHttpCall(String endpoint, String httpMethod, String payload) {
+    public HttpResponse executeHttpCall(String endpoint, String httpMethod, String payload) {
         try {
-            AtomicReference<Response> responseRef = new AtomicReference<>();
+            AtomicReference<HttpResponse> responseRef = new AtomicReference<>();
 
             HttpUriRequest request;
             switch (httpMethod.toUpperCase(Locale.ROOT)) {
@@ -92,9 +91,9 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
             }
 
             AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                final HttpResponse response = httpClient.execute(request);
+                final org.apache.http.HttpResponse response = httpClient.execute(request);
                 responseRef.set(
-                        new Response(
+                        new HttpResponse(
                                 response.getEntity().getContent(),
                                 response.getStatusLine().getStatusCode()));
                 return null;
