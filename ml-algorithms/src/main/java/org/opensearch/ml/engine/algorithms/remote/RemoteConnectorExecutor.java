@@ -79,6 +79,11 @@ public interface RemoteConnectorExecutor {
 
     void invokeRemoteModel(MLInput mlInput, Map<String, String> parameters, String payload, List<ModelTensors> tensorOutputs);
 
+    /**
+     * Execute DOWNLOAD action
+     * @param parameters the parameters used to customize download endpoint and payload
+     * @return the content as input stream
+     */
     default InputStream executeDownload(Map<String, String> parameters) throws IOException {
         final Connector connector = getConnector();
 

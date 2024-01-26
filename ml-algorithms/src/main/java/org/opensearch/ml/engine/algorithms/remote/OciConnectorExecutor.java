@@ -73,7 +73,6 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
         this.restClient = restClientFactory.create(requestSigner, Collections.emptyMap());
     }
 
-    @SneakyThrows
     @Override
     public void invokeRemoteModel(MLInput mlInput, Map<String, String> parameters, String payload, List<ModelTensors> tensorOutputs) {
         try {
