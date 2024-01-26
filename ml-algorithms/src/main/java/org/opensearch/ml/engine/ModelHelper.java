@@ -243,7 +243,7 @@ public class ModelHelper {
                         registerModelInput.getUrlConnector(), Connector.class);
 
         try {
-            final InputStream inStream = connectorExecutor.executeDownload();
+            final InputStream inStream = connectorExecutor.executeDownload(Map.of());
             final File destinationFile = new File(targetFilePath);
             FileUtils.forceMkdir(destinationFile.getParentFile());
             Files.copy(inStream, destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);

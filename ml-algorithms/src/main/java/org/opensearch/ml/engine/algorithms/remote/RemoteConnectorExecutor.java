@@ -100,12 +100,16 @@ public interface RemoteConnectorExecutor {
         }
     }
 
-    default InputStream executeDownload() {
+    default InputStream executeDownload(Map<String, String> downloadParameters) {
         final Connector connector = getConnector();
 
         final Map<String, String> parameters = new HashMap<>();
         if (connector.getParameters() != null) {
             parameters.putAll(connector.getParameters());
+        }
+        
+        if (downloadParameters != null) {
+            parameters.putAll(downloadParameters);
         }
 
         try {
