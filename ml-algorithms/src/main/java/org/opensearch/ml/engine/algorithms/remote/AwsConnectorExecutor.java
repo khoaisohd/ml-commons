@@ -75,7 +75,7 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
                 body = response.responseBody().get();
             }
 
-            StringBuilder responseBuilder = new StringBuilder();
+            final StringBuilder responseBuilder = new StringBuilder();
             if (body != null) {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8))) {
                     String line;
