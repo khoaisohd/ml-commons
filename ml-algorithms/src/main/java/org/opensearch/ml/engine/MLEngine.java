@@ -70,7 +70,10 @@ public class MLEngine {
         // TODO : Temporary workaround as we current code does not handle SAN certs properly
         //  Turning off host name validation
         final HostnameVerifier hostnameVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
-        HttpsURLConnection.setDefaultHostnameVerifier((hostName, session) -> isModelRepoEndpoint(hostName, this.modelRepoEndpoint) || hostnameVerifier.verify(hostName, session));
+        HttpsURLConnection.setDefaultHostnameVerifier(
+                (hostName, session) ->
+                        isModelRepoEndpoint(hostName, this.modelRepoEndpoint) ||
+                                hostnameVerifier.verify(hostName, session));
 
         //TODO - This is a hack and can be fixed when djl.ai build has up to date logic
         // User might want to load their own libstdc++.so.6 instead of one provided by djl
