@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -65,8 +66,9 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
             final String endpoint = connector.getPredictEndpoint(parameters);
             final String method = connector.getPredictHttpMethod();
             final HttpResponse httpResponse = makeHttpCall(endpoint, method, parameters, payload);
-            final int statusCode = httpResponse.getStatusCode();
-            final String modelResponse = ConnectorUtils.getInputStreamContent(httpResponse.getBody());
+            final int statusCode = httpResponse.getStatusLine().getStatusCode();
+            final InputStream responseBody = httpResponse.getEntity().getContent();
+            final String modelResponse = ConnectorUtils.getInputStreamContent(responseBody);
 
             if (statusCode < 200 || statusCode >= 300) {
                 throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR + modelResponse, RestStatus.fromCode(statusCode));
@@ -85,12 +87,14 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
         final String endpoint = connector.getEndpoint(ConnectorAction.ActionType.DOWNLOAD, parameters);
         final String httpMethod = connector.getHttpMethod(ConnectorAction.ActionType.DOWNLOAD);
         final HttpResponse httpResponse = makeHttpCall(endpoint, httpMethod, parameters, payload);
+        final int statusCode = httpResponse.getStatusLine().getStatusCode();
+        final InputStream responseBody = httpResponse.getEntity().getContent();
 
-        if (httpResponse.getStatusCode() < 200 || httpResponse.getStatusCode() >= 300) {
+        if (statusCode < 200 || statusCode >= 300) {
             throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR +
-                    ConnectorUtils.getInputStreamContent(httpResponse.getBody()), RestStatus.fromCode(httpResponse.getStatusCode()));
+                    ConnectorUtils.getInputStreamContent(responseBody), RestStatus.fromCode(statusCode));
         } else {
-            return httpResponse.getBody();
+            return responseBody;
         }
     }
 
@@ -102,8 +106,7 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
             switch (httpMethod.toUpperCase(Locale.ROOT)) {
                 case "POST":
                     try {
-                        String predictEndpoint = connector.getPredictEndpoint(parameters);
-                        request = new HttpPost(predictEndpoint);
+                        request = new HttpPost(endpoint);
                         HttpEntity entity = new StringEntity(payload);
                         ((HttpPost)request).setEntity(entity);
                     } catch (Exception e) {
@@ -136,11 +139,8 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
             }
 
             AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                final org.apache.http.HttpResponse response = httpClient.execute(request);
-                responseRef.set(
-                        new HttpResponse(
-                                response.getEntity().getContent(),
-                                response.getStatusLine().getStatusCode()));
+                final HttpResponse response = httpClient.execute(request);
+                responseRef.set(response);
                 return null;
             });
             return responseRef.get();

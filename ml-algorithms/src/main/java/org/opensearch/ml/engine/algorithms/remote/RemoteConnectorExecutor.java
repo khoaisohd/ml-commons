@@ -104,17 +104,4 @@ public interface RemoteConnectorExecutor {
      * @return the {@link HttpResponse}
      */
     InputStream invokeDownload(Map<String, String> parameters, String payload) throws IOException;
-
-    @Data
-    class HttpResponse {
-        /**
-         * The response body
-         */
-        private final InputStream body;
-
-        /**
-         * The response status code
-         */
-        private final int statusCode;
-    }
 }

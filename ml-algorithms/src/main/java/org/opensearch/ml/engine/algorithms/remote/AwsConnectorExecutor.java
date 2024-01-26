@@ -26,9 +26,12 @@ import software.amazon.awssdk.http.HttpExecuteResponse;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.SdkHttpFullRequest;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
@@ -64,9 +67,27 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
     public void invokeRemoteModel(MLInput mlInput, Map<String, String> parameters, String payload, List<ModelTensors> tensorOutputs) {
         try {
             final String endpoint = connector.getPredictEndpoint(parameters);
-            final HttpResponse httpResponse = makeHttpCall(endpoint, "POST", payload);
-            final int statusCode = httpResponse.getStatusCode();
-            final String modelResponse = ConnectorUtils.getInputStreamContent(httpResponse.getBody());
+            final HttpExecuteResponse response = makeHttpCall(endpoint, "POST", payload);
+            final int statusCode = response.httpResponse().statusCode();
+
+            AbortableInputStream body = null;
+            if (response.responseBody().isPresent()) {
+                body = response.responseBody().get();
+            }
+
+            StringBuilder responseBuilder = new StringBuilder();
+            if (body != null) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        responseBuilder.append(line);
+                    }
+                }
+            } else {
+                throw new OpenSearchStatusException("No response from model", RestStatus.BAD_REQUEST);
+            }
+
+            final String modelResponse = responseBuilder.toString();
 
             if (statusCode < 200 || statusCode >= 300) {
                 throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR + modelResponse, RestStatus.fromCode(statusCode));
@@ -84,18 +105,23 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
     public InputStream invokeDownload(Map<String, String> parameters, String payload) throws IOException {
         final String endpoint = connector.getEndpoint(ConnectorAction.ActionType.DOWNLOAD, parameters);
         final String httpMethod = connector.getHttpMethod(ConnectorAction.ActionType.DOWNLOAD);
-        final HttpResponse httpResponse = makeHttpCall(endpoint, httpMethod, payload);
+        final HttpExecuteResponse response = makeHttpCall(endpoint, httpMethod, payload);
+        final int statusCode = response.httpResponse().statusCode();
+        final AbortableInputStream responseBody =
+                response.responseBody().orElseThrow(
+                        () -> new OpenSearchStatusException("No response from model", RestStatus.BAD_REQUEST));
 
-        if (httpResponse.getStatusCode() < 200 || httpResponse.getStatusCode() >= 300) {
+        if (statusCode < 200 || statusCode >= 300) {
             throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR +
-                    ConnectorUtils.getInputStreamContent(httpResponse.getBody()), RestStatus.fromCode(httpResponse.getStatusCode()));
+                    ConnectorUtils.getInputStreamContent(responseBody),
+                    RestStatus.fromCode(statusCode));
         } else {
-            return httpResponse.getBody();
+            return responseBody;
         }
     }
 
 
-    private HttpResponse makeHttpCall(String endpoint, String httpMethod, String payload) {
+    private HttpExecuteResponse makeHttpCall(String endpoint, String httpMethod, String payload) {
         try {
             RequestBody requestBody = RequestBody.fromString(payload);
 
@@ -126,21 +152,9 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
                     .contentStreamProvider(request.contentStreamProvider().orElse(null))
                     .build();
 
-            HttpExecuteResponse response = AccessController.doPrivileged((PrivilegedExceptionAction<HttpExecuteResponse>) () -> {
+            return AccessController.doPrivileged((PrivilegedExceptionAction<HttpExecuteResponse>) () -> {
                 return httpClient.prepareRequest(executeRequest).call();
             });
-            int statusCode = response.httpResponse().statusCode();
-
-            AbortableInputStream body = null;
-            if (response.responseBody().isPresent()) {
-                body = response.responseBody().get();
-            }
-
-            if (body == null) {
-                throw new OpenSearchStatusException("No response from model", RestStatus.BAD_REQUEST);
-            }
-
-            return new HttpResponse(body, statusCode);
         } catch (RuntimeException exception) {
             log.error("Failed to execute predict in aws connector: " + exception.getMessage(), exception);
             throw exception;
