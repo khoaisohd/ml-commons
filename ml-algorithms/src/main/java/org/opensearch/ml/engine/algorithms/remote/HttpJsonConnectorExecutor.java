@@ -77,7 +77,6 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
             tensors.setStatusCode(statusCode);
             tensorOutputs.add(tensors);
         } catch (Exception e) {
-            log.error("Fail to execute http connector", e);
             throw new MLException("Fail to execute http connector", e);
         }
     }

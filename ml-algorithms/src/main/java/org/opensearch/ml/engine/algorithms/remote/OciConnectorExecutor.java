@@ -69,8 +69,7 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
 
         final BasicAuthenticationDetailsProvider provider = buildAuthenticationDetailsProvider(connector);
         final RestClientFactory restClientFactory = RestClientFactoryBuilder.builder().build();
-
-        RequestSigner requestSigner = DefaultRequestSigner.createRequestSigner(provider);
+        final RequestSigner requestSigner = DefaultRequestSigner.createRequestSigner(provider);
         this.restClient = restClientFactory.create(requestSigner, Collections.emptyMap());
     }
 

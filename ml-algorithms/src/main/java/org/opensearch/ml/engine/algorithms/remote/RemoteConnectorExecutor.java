@@ -79,21 +79,21 @@ public interface RemoteConnectorExecutor {
 
     void invokeRemoteModel(MLInput mlInput, Map<String, String> parameters, String payload, List<ModelTensors> tensorOutputs);
 
-    default InputStream executeDownload(Map<String, String> downloadParameters) throws IOException {
+    default InputStream executeDownload(Map<String, String> parameters) throws IOException {
         final Connector connector = getConnector();
 
-        final Map<String, String> parameters = new HashMap<>();
+        final Map<String, String> downloadParameters = new HashMap<>();
         if (connector.getParameters() != null) {
-            parameters.putAll(connector.getParameters());
+            downloadParameters.putAll(connector.getParameters());
         }
         
-        if (downloadParameters != null) {
-            parameters.putAll(downloadParameters);
+        if (parameters != null) {
+            downloadParameters.putAll(parameters);
         }
 
-        final String payload = connector.createPayload(ConnectorAction.ActionType.DOWNLOAD, parameters);
+        final String payload = connector.createPayload(ConnectorAction.ActionType.DOWNLOAD, downloadParameters);
         connector.validatePayload(payload);
-        return invokeDownload(parameters, payload);
+        return invokeDownload(downloadParameters, payload);
     }
 
     /**
