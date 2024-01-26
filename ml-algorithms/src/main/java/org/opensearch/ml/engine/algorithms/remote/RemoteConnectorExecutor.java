@@ -5,7 +5,6 @@
 
 package org.opensearch.ml.engine.algorithms.remote;
 
-import lombok.Data;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
@@ -78,6 +77,8 @@ public interface RemoteConnectorExecutor {
         invokeRemoteModel(mlInput, parameters, payload, tensorOutputs);
     }
 
+    void invokeRemoteModel(MLInput mlInput, Map<String, String> parameters, String payload, List<ModelTensors> tensorOutputs);
+
     default InputStream executeDownload(Map<String, String> downloadParameters) throws IOException {
         final Connector connector = getConnector();
 
@@ -94,8 +95,6 @@ public interface RemoteConnectorExecutor {
         connector.validatePayload(payload);
         return invokeDownload(parameters, payload);
     }
-
-    void invokeRemoteModel(MLInput mlInput, Map<String, String> parameters, String payload, List<ModelTensors> tensorOutputs);
 
     /**
      * Execute http call on a remote service via http protocol

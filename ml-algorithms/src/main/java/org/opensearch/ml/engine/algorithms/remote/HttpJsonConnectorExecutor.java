@@ -34,7 +34,6 @@ import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.opensearch.ml.common.CommonValue.REMOTE_SERVICE_ERROR;
 import static org.opensearch.ml.common.connector.ConnectorProtocols.HTTP;
@@ -100,8 +99,6 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
 
     private HttpResponse makeHttpCall(String endpoint, String httpMethod, Map<String, String> parameters, String payload) {
         try {
-            AtomicReference<HttpResponse> responseRef = new AtomicReference<>();
-
             HttpUriRequest request;
             switch (httpMethod.toUpperCase(Locale.ROOT)) {
                 case "POST":
@@ -138,12 +135,9 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
                 request.addHeader("Content-Type", "application/json");
             }
 
-            AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                final HttpResponse response = httpClient.execute(request);
-                responseRef.set(response);
-                return null;
+            return AccessController.doPrivileged((PrivilegedExceptionAction<HttpResponse>) () -> {
+                return httpClient.execute(request);
             });
-            return responseRef.get();
         } catch (RuntimeException e) {
             log.error("Fail to execute http connector", e);
             throw e;

@@ -123,9 +123,9 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
 
     private HttpExecuteResponse makeHttpCall(String endpoint, String httpMethod, String payload) {
         try {
-            RequestBody requestBody = RequestBody.fromString(payload);
+            final RequestBody requestBody = RequestBody.fromString(payload);
 
-            SdkHttpFullRequest.Builder builder = SdkHttpFullRequest.builder()
+            final SdkHttpFullRequest.Builder builder = SdkHttpFullRequest.builder()
                     .method(POST)
                     .uri(URI.create(endpoint))
                     .contentStreamProvider(requestBody.contentStreamProvider());
@@ -140,14 +140,14 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
                     throw new IllegalArgumentException("unsupported http method");
             }
 
-            Map<String, String> headers = connector.getDecryptedHeaders();
+            final Map<String, String> headers = connector.getDecryptedHeaders();
             if (headers != null) {
                 for (String key : headers.keySet()) {
                     builder.putHeader(key, headers.get(key));
                 }
             }
-            SdkHttpFullRequest request = builder.build();
-            HttpExecuteRequest executeRequest = HttpExecuteRequest.builder()
+            final SdkHttpFullRequest request = builder.build();
+            final HttpExecuteRequest executeRequest = HttpExecuteRequest.builder()
                     .request(signRequest(request))
                     .contentStreamProvider(request.contentStreamProvider().orElse(null))
                     .build();
