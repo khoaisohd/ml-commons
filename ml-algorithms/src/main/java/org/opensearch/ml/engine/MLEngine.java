@@ -5,6 +5,8 @@
 
 package org.opensearch.ml.engine;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.opensearch.common.settings.Setting;
@@ -65,11 +67,19 @@ public class MLEngine {
         this.modelRepoEndpoint = ML_COMMON_MODEL_REPO_ENDPOINT.get(settings);
         this.modelMetalistEndpoint = ML_COMMON_MODEL_METALIST_ENDPOINT.get(settings);
 
+        // TODO : Temporary workaround as we current code does not handle SAN certs properly
+        //  Turning off host name validation
+        final HostnameVerifier hostnameVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
+        HttpsURLConnection.setDefaultHostnameVerifier((hostName, session) -> isModelRepoEndpoint(hostName, this.modelRepoEndpoint) || hostnameVerifier.verify(hostName, session));
+
         //TODO - This is a hack and can be fixed when djl.ai build has up to date logic
         // User might want to load their own libstdc++.so.6 instead of one provided by djl
         // Refer: https://github.com/deepjavalibrary/djl/pull/2929
         // Refer: https://github.com/deepjavalibrary/djl/issues/2919
         conditionalLoadCustomLibStdc();
+    }
+    private boolean isModelRepoEndpoint(String hostName, String modelRepoEndpoint) {
+        return hostName.contains(modelRepoEndpoint);
     }
 
     private void conditionalLoadCustomLibStdc() {

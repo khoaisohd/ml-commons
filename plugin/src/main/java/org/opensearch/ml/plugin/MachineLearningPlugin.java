@@ -212,7 +212,6 @@ import org.opensearch.watcher.ResourceWatcherService;
 
 import com.google.common.collect.ImmutableList;
 
-import javax.net.ssl.HttpsURLConnection;
 import lombok.SneakyThrows;
 
 public class MachineLearningPlugin extends Plugin implements ActionPlugin, SearchPlugin, SearchPipelinePlugin {
@@ -467,11 +466,6 @@ public class MachineLearningPlugin extends Plugin implements ActionPlugin, Searc
             mlIndicesHandler,
             encryptor
         );
-
-        // TODO : Temporary workaround as we current code does not handle SAN certs properly
-        //  Turning off host name validation
-        HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
-
         // TODO move this into MLFeatureEnabledSetting
         // search processor factories below will get BooleanSupplier that supplies the current value being updated through this.
         clusterService
