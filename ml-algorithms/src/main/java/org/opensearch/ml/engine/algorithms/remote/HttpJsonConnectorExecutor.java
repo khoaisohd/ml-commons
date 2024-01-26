@@ -64,7 +64,7 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
         try {
             final String endpoint = connector.getPredictEndpoint(parameters);
             final String method = connector.getPredictHttpMethod();
-            final HttpResponse httpResponse = makeHttpCall(endpoint, method, parameters, payload);
+            final HttpResponse httpResponse = makeHttpCall(endpoint, method, payload);
             final int statusCode = httpResponse.getStatusLine().getStatusCode();
             final InputStream responseBody = httpResponse.getEntity().getContent();
             final String modelResponse = ConnectorUtils.getInputStreamContent(responseBody);
@@ -84,7 +84,7 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
     public InputStream invokeDownload(Map<String, String> parameters, String payload) throws IOException {
         final String endpoint = connector.getEndpoint(ConnectorAction.ActionType.DOWNLOAD, parameters);
         final String httpMethod = connector.getHttpMethod(ConnectorAction.ActionType.DOWNLOAD);
-        final HttpResponse httpResponse = makeHttpCall(endpoint, httpMethod, parameters, payload);
+        final HttpResponse httpResponse = makeHttpCall(endpoint, httpMethod, payload);
         final int statusCode = httpResponse.getStatusLine().getStatusCode();
         final InputStream responseBody = httpResponse.getEntity().getContent();
 
