@@ -78,6 +78,7 @@ public class MLEngine {
         // Refer: https://github.com/deepjavalibrary/djl/issues/2919
         conditionalLoadCustomLibStdc();
     }
+
     private boolean isModelRepoEndpoint(String hostName, String modelRepoEndpoint) {
         return hostName.contains(modelRepoEndpoint);
     }
