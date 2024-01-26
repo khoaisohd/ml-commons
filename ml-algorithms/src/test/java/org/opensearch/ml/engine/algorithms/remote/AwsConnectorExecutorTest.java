@@ -121,7 +121,7 @@ public class AwsConnectorExecutorTest {
 
     @Test
     public void executePredict_RemoteInferenceInput_InvalidToken() throws IOException {
-        exceptionRule.expect(OpenSearchException.class);
+        exceptionRule.expect(OpenSearchStatusException.class);
         exceptionRule.expectMessage("{\"message\":\"The security token included in the request is invalid\"}");
         String jsonString = "{\"message\":\"The security token included in the request is invalid\"}";
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());

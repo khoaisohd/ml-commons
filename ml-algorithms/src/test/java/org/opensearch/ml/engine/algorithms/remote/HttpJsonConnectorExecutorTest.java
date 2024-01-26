@@ -128,7 +128,7 @@ public class HttpJsonConnectorExecutorTest {
 
     @Test
     public void executePredict_TextDocsInput_LimitExceed() throws IOException {
-        exceptionRule.expect(OpenSearchException.class);
+        exceptionRule.expect(OpenSearchStatusException.class);
         exceptionRule.expectMessage("{\"message\": \"Too many requests\"}");
         ConnectorAction predictAction = ConnectorAction.builder()
                 .actionType(ConnectorAction.ActionType.PREDICT)
