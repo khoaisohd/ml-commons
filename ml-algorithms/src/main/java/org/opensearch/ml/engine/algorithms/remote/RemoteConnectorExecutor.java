@@ -6,11 +6,8 @@
 package org.opensearch.ml.engine.algorithms.remote;
 
 import lombok.Data;
-import org.opensearch.OpenSearchException;
-import org.opensearch.OpenSearchStatusException;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.service.ClusterService;
-import org.opensearch.core.rest.RestStatus;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.ml.common.FunctionName;
 import org.opensearch.ml.common.connector.Connector;
@@ -30,9 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.opensearch.ml.common.CommonValue.REMOTE_SERVICE_ERROR;
 import static org.opensearch.ml.engine.algorithms.remote.ConnectorUtils.processInput;
-import static org.opensearch.ml.engine.algorithms.remote.ConnectorUtils.processOutput;
 
 public interface RemoteConnectorExecutor {
 
@@ -80,27 +75,10 @@ public interface RemoteConnectorExecutor {
         }
         String payload = connector.createPredictPayload(parameters);
         connector.validatePayload(payload);
-        final String endpoint = connector.getPredictEndpoint(parameters);
-        final String httpMethod = connector.getPredictHttpMethod();
-        final HttpResponse response = executeHttpCall(endpoint, httpMethod, payload);
-
-        try {
-            final String jsonBody = ConnectorUtils.getInputStreamContent(response.getBody());
-            final int statusCode = response.getStatusCode();
-
-            if (statusCode < 200 || statusCode >= 300) {
-                throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR + jsonBody, RestStatus.fromCode(statusCode));
-            } else {
-                final ModelTensors tensors = processOutput(jsonBody, connector, getScriptService(), parameters);
-                tensors.setStatusCode(statusCode);
-                tensorOutputs.add(tensors);
-            }
-        } catch (IOException | RuntimeException ex) {
-            throw new OpenSearchException("Failed execute predict action " + ex.getMessage(), ex);
-        }
+        invokeRemoteModel(mlInput, parameters, payload, tensorOutputs);
     }
 
-    default InputStream executeDownload(Map<String, String> downloadParameters) {
+    default InputStream executeDownload(Map<String, String> downloadParameters) throws IOException {
         final Connector connector = getConnector();
 
         final Map<String, String> parameters = new HashMap<>();
@@ -112,32 +90,20 @@ public interface RemoteConnectorExecutor {
             parameters.putAll(downloadParameters);
         }
 
-        try {
-            final String payload = connector.createPayload(ConnectorAction.ActionType.DOWNLOAD, parameters);
-            connector.validatePayload(payload);
-            final String endpoint = connector.getEndpoint(ConnectorAction.ActionType.DOWNLOAD, parameters);
-            final String httpMethod = connector.getHttpMethod(ConnectorAction.ActionType.DOWNLOAD);
-            final HttpResponse response = executeHttpCall(endpoint, httpMethod, payload);
-
-            if (response.getStatusCode() < 200 || response.getStatusCode() >= 300) {
-                throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR +
-                        ConnectorUtils.getInputStreamContent(response.getBody()), RestStatus.fromCode(response.getStatusCode()));
-            } else {
-                return response.getBody();
-            }
-        } catch (IOException | RuntimeException exception) {
-            throw new OpenSearchException("Failed execute download action " + exception.getMessage(), exception);
-        }
+        final String payload = connector.createPayload(ConnectorAction.ActionType.DOWNLOAD, parameters);
+        connector.validatePayload(payload);
+        return invokeDownload(parameters, payload);
     }
+
+    void invokeRemoteModel(MLInput mlInput, Map<String, String> parameters, String payload, List<ModelTensors> tensorOutputs);
 
     /**
      * Execute http call on a remote service via http protocol
-     * @param endpoint the remote service endpoint
-     * @param httpMethod the http method
+     * @param parameters the action parameters
      * @param payload the request payload
      * @return the {@link HttpResponse}
      */
-    HttpResponse executeHttpCall(String endpoint, String httpMethod, String payload);
+    InputStream invokeDownload(Map<String, String> parameters, String payload) throws IOException;
 
     @Data
     class HttpResponse {

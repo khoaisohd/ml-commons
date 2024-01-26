@@ -74,10 +74,7 @@ public class HttpJsonConnectorExecutorTest {
                 .build();
         Connector connector = HttpConnector.builder().name("test connector").version("1").protocol("http").actions(Arrays.asList(predictAction)).build();
         HttpJsonConnectorExecutor executor = new HttpJsonConnectorExecutor(connector);
-        executor.executeHttpCall(
-                null, // endpoint
-                connector.getPredictHttpMethod(),
-                null); // payload
+        executor.invokeRemoteModel(null, null, null, null);
     }
 
     @Test

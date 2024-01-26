@@ -19,23 +19,34 @@ import com.oracle.bmc.http.signing.RequestSigner;
 import com.oracle.bmc.requests.BmcRequest;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import lombok.Synchronized;
 import lombok.extern.log4j.Log4j2;
+import org.opensearch.OpenSearchStatusException;
+import org.opensearch.core.rest.RestStatus;
 import org.opensearch.ml.common.connector.Connector;
+import org.opensearch.ml.common.connector.ConnectorAction;
 import org.opensearch.ml.common.connector.OciConnector;
+import org.opensearch.ml.common.exception.MLException;
+import org.opensearch.ml.common.input.MLInput;
+import org.opensearch.ml.common.output.model.ModelTensors;
 import org.opensearch.ml.engine.annotation.ConnectorExecutor;
 import org.opensearch.script.ScriptService;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static org.opensearch.ml.common.CommonValue.REMOTE_SERVICE_ERROR;
 import static org.opensearch.ml.common.connector.ConnectorProtocols.OCI_SIGV1;
 import static org.opensearch.ml.common.connector.OciConnector.OciClientAuthType;
+import static org.opensearch.ml.engine.algorithms.remote.ConnectorUtils.processOutput;
 
 /**
  * OciConnectorExecutor is responsible to call remote model from OCI services
@@ -62,9 +73,45 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
         this.restClient = restClientFactory.create(requestSigner, Collections.emptyMap());
     }
 
+    @SneakyThrows
+    @Override
+    public void invokeRemoteModel(MLInput mlInput, Map<String, String> parameters, String payload, List<ModelTensors> tensorOutputs) {
+        try {
+            final String endpoint = connector.getPredictEndpoint(parameters);
+            final String method = connector.getPredictHttpMethod();
+            final HttpResponse httpResponse = makeHttpCall(endpoint, method, payload);
 
-     @Override
-     public HttpResponse executeHttpCall(String endpoint, String httpMethod, String payload) {
+            final String modelResponse = ConnectorUtils.getInputStreamContent(httpResponse.getBody());
+            final int statusCode = httpResponse.getStatusCode();
+            if (statusCode < 200 || statusCode >= 300) {
+                throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR + modelResponse, RestStatus.fromCode(statusCode));
+            }
+
+            final ModelTensors tensors = processOutput(modelResponse, connector, scriptService, parameters);
+            tensors.setStatusCode(statusCode);
+            tensorOutputs.add(tensors);
+        } catch (RuntimeException e) {
+            log.error("Fail to execute http connector", e);
+            throw e;
+        }
+    }
+
+    @Override
+    public InputStream invokeDownload(Map<String, String> parameters, String payload) throws IOException {
+        final String endpoint = connector.getEndpoint(ConnectorAction.ActionType.DOWNLOAD, parameters);
+        final String httpMethod = connector.getHttpMethod(ConnectorAction.ActionType.DOWNLOAD);
+        final HttpResponse httpResponse = makeHttpCall(endpoint, httpMethod, payload);
+
+        if (httpResponse.getStatusCode() < 200 || httpResponse.getStatusCode() >= 300) {
+            throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR +
+                    ConnectorUtils.getInputStreamContent(httpResponse.getBody()), RestStatus.fromCode(httpResponse.getStatusCode()));
+        } else {
+            return httpResponse.getBody();
+        }
+    }
+
+
+     private HttpResponse makeHttpCall(String endpoint, String httpMethod, String payload) {
          final WebTarget target = getWebTarget(endpoint);
          final WrappedInvocationBuilder wrappedIb = new WrappedInvocationBuilder(target.request(), target.getUri());
          final javax.ws.rs.core.Response response;
