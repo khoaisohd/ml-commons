@@ -288,9 +288,9 @@ public class HttpConnector extends AbstractConnector {
 
     @Override
     public  <T> T createPayload(ConnectorAction.ActionType actionType, Map<String, String> parameters) {
-        final Optional<ConnectorAction> predictAction = findAction(actionType);
-        if (predictAction.isPresent() && predictAction.get().getRequestBody() != null) {
-            String payload = predictAction.get().getRequestBody();
+        final Optional<ConnectorAction> action = findAction(actionType);
+        if (action.isPresent() && action.get().getRequestBody() != null) {
+            String payload = action.get().getRequestBody();
             payload = fillNullParameters(parameters, payload);
             final StringSubstitutor substitutor = new StringSubstitutor(parameters, "${parameters.", "}");
             payload = substitutor.replace(payload);

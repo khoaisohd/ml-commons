@@ -112,8 +112,9 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
                         () -> new OpenSearchStatusException("No response from model", RestStatus.BAD_REQUEST));
 
         if (statusCode < 200 || statusCode >= 300) {
-            throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR +
-                    ConnectorUtils.getInputStreamContent(responseBody),
+            throw new OpenSearchStatusException(
+                    REMOTE_SERVICE_ERROR +
+                            ConnectorUtils.getInputStreamContent(responseBody),
                     RestStatus.fromCode(statusCode));
         } else {
             return responseBody;
@@ -123,12 +124,14 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
 
     private HttpExecuteResponse makeHttpCall(String endpoint, String httpMethod, String payload) {
         try {
-            final RequestBody requestBody = RequestBody.fromString(payload);
+            final SdkHttpFullRequest.Builder builder =
+                    SdkHttpFullRequest.builder().uri(URI.create(endpoint));
 
-            final SdkHttpFullRequest.Builder builder = SdkHttpFullRequest.builder()
-                    .method(POST)
-                    .uri(URI.create(endpoint))
-                    .contentStreamProvider(requestBody.contentStreamProvider());
+            if (payload != null) {
+                final RequestBody requestBody = RequestBody.fromString(payload);
+                builder.contentStreamProvider(requestBody.contentStreamProvider());
+            }
+            
             switch (httpMethod.toUpperCase(Locale.ROOT)) {
                 case "POST":
                     builder.method(POST);
