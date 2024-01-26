@@ -215,4 +215,62 @@ public class AwsConnectorExecutorTest {
         Assert.assertEquals(1, modelTensorOutput.getMlModelOutputs().get(0).getMlModelTensors().get(0).getDataAsMap().size());
         Assert.assertEquals("value", modelTensorOutput.getMlModelOutputs().get(0).getMlModelTensors().get(0).getDataAsMap().get("key"));
     }
+
+    @Test
+    public void executeDownload() throws IOException {
+        String jsonString = "{\"key\":\"value\"}";
+        InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
+        AbortableInputStream abortableInputStream = AbortableInputStream.create(inputStream);
+        when(response.responseBody()).thenReturn(Optional.of(abortableInputStream));
+        SdkHttpResponse httpResponse = mock(SdkHttpResponse.class);
+        when(httpResponse.statusCode()).thenReturn(200);
+        when(response.httpResponse()).thenReturn(httpResponse);
+        when(httpRequest.call()).thenReturn(response);
+        when(httpClient.prepareRequest(any())).thenReturn(httpRequest);
+
+        ConnectorAction predictAction = ConnectorAction.builder()
+                .actionType(ConnectorAction.ActionType.DOWNLOAD)
+                .method("POST")
+                .url("http://test.com/mock")
+                .requestBody("{\"input\": \"${parameters.input}\"}")
+                .build();
+        Map<String, String> credential = ImmutableMap.of(ACCESS_KEY_FIELD, encryptor.encrypt("test_key"), SECRET_KEY_FIELD, encryptor.encrypt("test_secret_key"));
+        Map<String, String> parameters = ImmutableMap.of(REGION_FIELD, "us-west-2", SERVICE_NAME_FIELD, "sagemaker");
+        Connector connector = AwsConnector.awsConnectorBuilder().name("test connector").version("1").protocol("http").parameters(parameters).credential(credential).actions(Arrays.asList(predictAction)).build();
+        connector.decrypt((c) -> encryptor.decrypt(c));
+        AwsConnectorExecutor executor = spy(new AwsConnectorExecutor(connector, httpClient));
+
+        InputStream responseBody = executor.executeDownload(Map.of("input", "123"));
+        String responseBodyAsString = ConnectorUtils.getInputStreamContent(responseBody);
+
+        Assert.assertEquals(jsonString, responseBodyAsString);
+    }
+
+    @Test
+    public void executeDownload_MissingParameters() throws IOException {
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage("Some parameter placeholder not filled in payload: input");
+        String jsonString = "{\"key\":\"value\"}";
+        InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
+        AbortableInputStream abortableInputStream = AbortableInputStream.create(inputStream);
+        when(response.responseBody()).thenReturn(Optional.of(abortableInputStream));
+        SdkHttpResponse httpResponse = mock(SdkHttpResponse.class);
+        when(httpResponse.statusCode()).thenReturn(200);
+        when(response.httpResponse()).thenReturn(httpResponse);
+        when(httpRequest.call()).thenReturn(response);
+        when(httpClient.prepareRequest(any())).thenReturn(httpRequest);
+
+        ConnectorAction predictAction = ConnectorAction.builder()
+                .actionType(ConnectorAction.ActionType.DOWNLOAD)
+                .method("POST")
+                .url("http://test.com/mock")
+                .requestBody("{\"input\": \"${parameters.input}\"}")
+                .build();
+        Map<String, String> credential = ImmutableMap.of(ACCESS_KEY_FIELD, encryptor.encrypt("test_key"), SECRET_KEY_FIELD, encryptor.encrypt("test_secret_key"));
+        Map<String, String> parameters = ImmutableMap.of(REGION_FIELD, "us-west-2", SERVICE_NAME_FIELD, "sagemaker");
+        Connector connector = AwsConnector.awsConnectorBuilder().name("test connector").version("1").protocol("http").parameters(parameters).credential(credential).actions(Arrays.asList(predictAction)).build();
+        connector.decrypt((c) -> encryptor.decrypt(c));
+        AwsConnectorExecutor executor = spy(new AwsConnectorExecutor(connector, httpClient));
+        executor.executeDownload(Map.of());
+    }
 }

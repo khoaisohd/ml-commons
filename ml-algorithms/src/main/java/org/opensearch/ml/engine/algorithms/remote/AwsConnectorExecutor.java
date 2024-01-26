@@ -96,7 +96,7 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
             final ModelTensors tensors = processOutput(modelResponse, connector, scriptService, parameters);
             tensors.setStatusCode(statusCode);
             tensorOutputs.add(tensors);
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new MLException("Fail to execute predict in aws connector", e);
         }
     }
