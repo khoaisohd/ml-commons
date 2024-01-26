@@ -51,7 +51,7 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
     }
 
      @Override
-     public Response executeRemoteCall(String endpoint, String httpMethod, String payload) {
+     public Response executeHttpCall(String endpoint, String httpMethod, String payload) {
         try {
             RequestBody requestBody = RequestBody.fromString(payload);
 

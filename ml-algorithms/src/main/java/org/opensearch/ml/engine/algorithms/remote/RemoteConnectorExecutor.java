@@ -82,7 +82,7 @@ public interface RemoteConnectorExecutor {
         connector.validatePayload(payload);
         final String endpoint = connector.getPredictEndpoint(parameters);
         final String httpMethod = connector.getPredictHttpMethod();
-        final Response response = executeRemoteCall(endpoint, httpMethod, payload);
+        final Response response = executeHttpCall(endpoint, httpMethod, payload);
 
         try {
             final String jsonBody = ConnectorUtils.getInputStreamContent(response.getBody());
@@ -113,7 +113,7 @@ public interface RemoteConnectorExecutor {
             connector.validatePayload(payload);
             final String endpoint = connector.getEndpoint(ConnectorAction.ActionType.DOWNLOAD, parameters);
             final String httpMethod = connector.getHttpMethod(ConnectorAction.ActionType.DOWNLOAD);
-            final Response response = executeRemoteCall(endpoint, httpMethod, payload);
+            final Response response = executeHttpCall(endpoint, httpMethod, payload);
 
             if (response.getStatusCode() < 200 || response.getStatusCode() >= 300) {
                 throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR +
@@ -127,13 +127,13 @@ public interface RemoteConnectorExecutor {
     }
 
     /**
-     * Execute call on a remote service via http protocol
+     * Execute http call on a remote service via http protocol
      * @param endpoint the remote service endpoint
      * @param httpMethod the http method
      * @param payload the request payload
      * @return the {@link Response}
      */
-    Response executeRemoteCall(String endpoint, String httpMethod, String payload);
+    Response executeHttpCall(String endpoint, String httpMethod, String payload);
 
     @Data
     class Response {

@@ -21,7 +21,6 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.opensearch.OpenSearchException;
-import org.opensearch.OpenSearchStatusException;
 import org.opensearch.ingest.TestTemplateService;
 import org.opensearch.ml.common.FunctionName;
 import org.opensearch.ml.common.connector.Connector;
@@ -75,7 +74,7 @@ public class HttpJsonConnectorExecutorTest {
                 .build();
         Connector connector = HttpConnector.builder().name("test connector").version("1").protocol("http").actions(Arrays.asList(predictAction)).build();
         HttpJsonConnectorExecutor executor = new HttpJsonConnectorExecutor(connector);
-        executor.executeRemoteCall(
+        executor.executeHttpCall(
                 null, // endpoint
                 connector.getPredictHttpMethod(),
                 null); // payload

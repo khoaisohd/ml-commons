@@ -64,7 +64,7 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
 
 
      @Override
-     public Response executeRemoteCall(String endpoint, String httpMethod, String payload) {
+     public Response executeHttpCall(String endpoint, String httpMethod, String payload) {
          final WebTarget target = getWebTarget(endpoint);
          final WrappedInvocationBuilder wrappedIb = new WrappedInvocationBuilder(target.request(), target.getUri());
          final javax.ws.rs.core.Response response;

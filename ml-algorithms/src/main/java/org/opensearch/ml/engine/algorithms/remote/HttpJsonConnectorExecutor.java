@@ -51,7 +51,7 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
     }
 
     @Override
-    public Response executeRemoteCall(String endpoint, String httpMethod, String payload) {
+    public Response executeHttpCall(String endpoint, String httpMethod, String payload) {
         try {
             AtomicReference<Response> responseRef = new AtomicReference<>();
 
