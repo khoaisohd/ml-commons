@@ -97,10 +97,10 @@ public interface RemoteConnectorExecutor {
     }
 
     /**
-     * Execute http call on a remote service via http protocol
+     * Execute invoke download from remote service
      * @param parameters the action parameters
      * @param payload the request payload
-     * @return the {@link HttpResponse}
+     * @return the {@link InputStream}
      */
     InputStream invokeDownload(Map<String, String> parameters, String payload) throws IOException;
 }
