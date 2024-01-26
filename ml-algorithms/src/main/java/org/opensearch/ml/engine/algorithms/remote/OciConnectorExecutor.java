@@ -35,6 +35,7 @@ import org.opensearch.script.ScriptService;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Response;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -79,10 +80,10 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
         try {
             final String endpoint = connector.getPredictEndpoint(parameters);
             final String method = connector.getPredictHttpMethod();
-            final HttpResponse httpResponse = makeHttpCall(endpoint, method, payload);
+            final Response response = makeHttpCall(endpoint, method, payload);
 
-            final String modelResponse = ConnectorUtils.getInputStreamContent(httpResponse.getBody());
-            final int statusCode = httpResponse.getStatusCode();
+            final String modelResponse = ConnectorUtils.getInputStreamContent((InputStream) response.getEntity());
+            final int statusCode = response.getStatus();
             if (statusCode < 200 || statusCode >= 300) {
                 throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR + modelResponse, RestStatus.fromCode(statusCode));
             }
@@ -90,9 +91,8 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
             final ModelTensors tensors = processOutput(modelResponse, connector, scriptService, parameters);
             tensors.setStatusCode(statusCode);
             tensorOutputs.add(tensors);
-        } catch (RuntimeException e) {
-            log.error("Fail to execute http connector", e);
-            throw e;
+        } catch (Exception e) {
+            throw new MLException("Fail to execute predict in oci connector", e);
         }
     }
 
@@ -100,21 +100,26 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
     public InputStream invokeDownload(Map<String, String> parameters, String payload) throws IOException {
         final String endpoint = connector.getEndpoint(ConnectorAction.ActionType.DOWNLOAD, parameters);
         final String httpMethod = connector.getHttpMethod(ConnectorAction.ActionType.DOWNLOAD);
-        final HttpResponse httpResponse = makeHttpCall(endpoint, httpMethod, payload);
+        final Response response = makeHttpCall(endpoint, httpMethod, payload);
+        final int statusCode = response.getStatus();
+        final InputStream responseEntity = (InputStream) response.getEntity();
 
-        if (httpResponse.getStatusCode() < 200 || httpResponse.getStatusCode() >= 300) {
-            throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR +
-                    ConnectorUtils.getInputStreamContent(httpResponse.getBody()), RestStatus.fromCode(httpResponse.getStatusCode()));
+        if (statusCode < 200 || statusCode >= 300) {
+            final String opcRequestId = response.getHeaderString("opc-request-id");
+            final String requestBodyContent = ConnectorUtils.getInputStreamContent(responseEntity);
+            throw new OpenSearchStatusException(
+                    REMOTE_SERVICE_ERROR + requestBodyContent + " opc request id: " + opcRequestId,
+                    RestStatus.fromCode(statusCode));
         } else {
-            return httpResponse.getBody();
+            return responseEntity;
         }
     }
 
 
-     private HttpResponse makeHttpCall(String endpoint, String httpMethod, String payload) {
+     private Response makeHttpCall(String endpoint, String httpMethod, String payload) {
          final WebTarget target = getWebTarget(endpoint);
          final WrappedInvocationBuilder wrappedIb = new WrappedInvocationBuilder(target.request(), target.getUri());
-         final javax.ws.rs.core.Response response;
+         final Response response;
          switch (httpMethod.toUpperCase(Locale.ROOT)) {
              case "POST":
                  response = restClient.post(wrappedIb, payload, new BmcRequest<>());
@@ -125,7 +130,7 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
              default:
                  throw new IllegalArgumentException("unsupported http method");
          }
-         return new HttpResponse((InputStream) response.getEntity(), response.getStatus());
+         return response;
     }
 
     /**

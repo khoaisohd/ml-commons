@@ -67,12 +67,12 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
             final HttpResponse httpResponse = makeHttpCall(endpoint, "POST", payload);
             final int statusCode = httpResponse.getStatusCode();
             final String modelResponse = ConnectorUtils.getInputStreamContent(httpResponse.getBody());
-            
+
             if (statusCode < 200 || statusCode >= 300) {
                 throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR + modelResponse, RestStatus.fromCode(statusCode));
             }
 
-            ModelTensors tensors = processOutput(modelResponse, connector, scriptService, parameters);
+            final ModelTensors tensors = processOutput(modelResponse, connector, scriptService, parameters);
             tensors.setStatusCode(statusCode);
             tensorOutputs.add(tensors);
         } catch (Exception e) {

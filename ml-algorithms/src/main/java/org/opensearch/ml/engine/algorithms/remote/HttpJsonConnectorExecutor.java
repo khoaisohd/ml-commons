@@ -65,9 +65,9 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
             final String endpoint = connector.getPredictEndpoint(parameters);
             final String method = connector.getPredictHttpMethod();
             final HttpResponse httpResponse = makeHttpCall(endpoint, method, parameters, payload);
-
-            final String modelResponse = ConnectorUtils.getInputStreamContent(httpResponse.getBody());
             final int statusCode = httpResponse.getStatusCode();
+            final String modelResponse = ConnectorUtils.getInputStreamContent(httpResponse.getBody());
+
             if (statusCode < 200 || statusCode >= 300) {
                 throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR + modelResponse, RestStatus.fromCode(statusCode));
             }
@@ -75,10 +75,7 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
             final ModelTensors tensors = processOutput(modelResponse, connector, scriptService, parameters);
             tensors.setStatusCode(statusCode);
             tensorOutputs.add(tensors);
-        } catch (RuntimeException e) {
-            log.error("Fail to execute http connector", e);
-            throw e;
-        } catch (Throwable e) {
+        } catch (Exception e) {
             log.error("Fail to execute http connector", e);
             throw new MLException("Fail to execute http connector", e);
         }
