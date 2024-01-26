@@ -131,7 +131,7 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
                 final RequestBody requestBody = RequestBody.fromString(payload);
                 builder.contentStreamProvider(requestBody.contentStreamProvider());
             }
-            
+
             switch (httpMethod.toUpperCase(Locale.ROOT)) {
                 case "POST":
                     builder.method(POST);

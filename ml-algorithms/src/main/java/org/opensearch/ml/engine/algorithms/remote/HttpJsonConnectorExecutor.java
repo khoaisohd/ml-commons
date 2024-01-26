@@ -97,7 +97,7 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
         }
     }
 
-    private HttpResponse makeHttpCall(String endpoint, String httpMethod, Map<String, String> parameters, String payload) {
+    private HttpResponse makeHttpCall(String endpoint, String httpMethod, String payload) {
         try {
             HttpUriRequest request;
             switch (httpMethod.toUpperCase(Locale.ROOT)) {
@@ -112,7 +112,7 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
                     break;
                 case "GET":
                     try {
-                        request = new HttpGet(connector.getPredictEndpoint(parameters));
+                        request = new HttpGet(endpoint);
                     } catch (Exception e) {
                         throw new MLException("Failed to create http request for remote model", e);
                     }
@@ -126,7 +126,7 @@ public class HttpJsonConnectorExecutor implements RemoteConnectorExecutor {
             if (headers != null) {
                 for (String key : headers.keySet()) {
                     request.addHeader(key, (String)headers.get(key));
-                    if (key.toLowerCase().equals("Content-Type")) {
+                    if (key.equalsIgnoreCase("Content-Type")) {
                         hasContentTypeHeader = true;
                     }
                 }
