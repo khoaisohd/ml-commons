@@ -26,12 +26,9 @@ import software.amazon.awssdk.http.HttpExecuteResponse;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.SdkHttpFullRequest;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
@@ -68,23 +65,9 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
         try {
             final String endpoint = connector.getPredictEndpoint(parameters);
             final HttpResponse httpResponse = makeHttpCall(endpoint, "POST", payload);
-
             final int statusCode = httpResponse.getStatusCode();
-
-            final InputStream body = httpResponse.getBody();
-
-            final StringBuilder responseBuilder = new StringBuilder();
-            if (body != null) {
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        responseBuilder.append(line);
-                    }
-                }
-            } else {
-                throw new OpenSearchStatusException("No response from model", RestStatus.BAD_REQUEST);
-            }
-            String modelResponse = responseBuilder.toString();
+            final String modelResponse = ConnectorUtils.getInputStreamContent(httpResponse.getBody());
+            
             if (statusCode < 200 || statusCode >= 300) {
                 throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR + modelResponse, RestStatus.fromCode(statusCode));
             }
@@ -92,11 +75,7 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
             ModelTensors tensors = processOutput(modelResponse, connector, scriptService, parameters);
             tensors.setStatusCode(statusCode);
             tensorOutputs.add(tensors);
-        } catch (RuntimeException exception) {
-            log.error("Failed to execute predict in aws connector: " + exception.getMessage(), exception);
-            throw exception;
-        } catch (Throwable e) {
-            log.error("Failed to execute predict in aws connector", e);
+        } catch (Exception e) {
             throw new MLException("Fail to execute predict in aws connector", e);
         }
     }
