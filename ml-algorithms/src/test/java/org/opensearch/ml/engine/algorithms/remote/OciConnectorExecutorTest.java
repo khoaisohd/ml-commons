@@ -8,7 +8,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.opensearch.OpenSearchException;
+import org.opensearch.OpenSearchStatusException;
 import org.opensearch.ml.common.FunctionName;
 import org.opensearch.ml.common.connector.Connector;
 import org.opensearch.ml.common.connector.ConnectorAction;
@@ -94,7 +94,7 @@ public class OciConnectorExecutorTest {
     @Test
     @SneakyThrows
     public void executePredict_RemoteInferenceInput_WrongEndpoint() {
-        exceptionRule.expect(OpenSearchException.class);
+        exceptionRule.expect(OpenSearchStatusException.class);
 
         final ConnectorAction predictAction = ConnectorAction.builder()
                 .actionType(ConnectorAction.ActionType.PREDICT)
@@ -166,7 +166,7 @@ public class OciConnectorExecutorTest {
     @Test
     @SneakyThrows
     public void executeDownload_WrongEndpoint() {
-        exceptionRule.expect(OpenSearchException.class);
+        exceptionRule.expect(OpenSearchStatusException.class);
         exceptionRule.expectMessage("Authorization failed or requested resource not found.");
         final ConnectorAction predictAction = ConnectorAction.builder()
                 .actionType(ConnectorAction.ActionType.DOWNLOAD)
