@@ -15,9 +15,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import lombok.SneakyThrows;
 import org.opensearch.action.search.SearchAction;
 import org.opensearch.action.search.SearchRequestBuilder;
 import org.opensearch.action.search.SearchResponse;
@@ -183,8 +187,10 @@ public class MLModelAutoReDeployer {
         queryRunningModels(listener);
     }
 
+    @SneakyThrows
     private void triggerUndeployModelsOnDataNodes(List<String> dataNodeIds) {
         List<String> modelIds = new ArrayList<>();
+        AtomicInteger queryRunningModelFailed = new AtomicInteger(0);
         ActionListener<SearchResponse> listener = ActionListener.wrap(res -> {
             if (res != null && res.getHits() != null && res.getHits().getTotalHits() != null && res.getHits().getTotalHits().value > 0) {
                 Arrays.stream(res.getHits().getHits()).forEach(x -> modelIds.add(x.getId()));
@@ -199,8 +205,15 @@ public class MLModelAutoReDeployer {
                     client.execute(MLUndeployModelAction.INSTANCE, undeployModelNodesRequest, undeployModelListener);
                 }
             }
-        }, e -> { log.error("Failed to query need undeploy models, no action will be performed"); });
-        queryRunningModels(listener);
+        }, e -> {
+            log.error("Failed to query need undeploy models, retry {}", queryRunningModelFailed.addAndGet(1));
+        });
+
+        while (queryRunningModelFailed.get() < 10){
+            TimeUnit.SECONDS.sleep(3);
+            queryRunningModels(listener);
+        }
+
     }
 
     private void queryRunningModels(ActionListener<SearchResponse> listener) {
