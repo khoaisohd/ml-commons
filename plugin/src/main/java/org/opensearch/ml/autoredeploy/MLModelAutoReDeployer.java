@@ -209,10 +209,10 @@ public class MLModelAutoReDeployer {
             log.error("Failed to query need undeploy models, retry {}", queryRunningModelFailed.addAndGet(1));
         });
 
-        while (queryRunningModelFailed.get() < 10){
+        do {
             TimeUnit.SECONDS.sleep(3);
             queryRunningModels(listener);
-        }
+        } while(queryRunningModelFailed.get() > 0 && queryRunningModelFailed.get() < 10);
 
     }
 
