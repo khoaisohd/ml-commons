@@ -14,20 +14,21 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import lombok.SneakyThrows;
+import org.opensearch.action.admin.cluster.health.ClusterHealthRequest;
+import org.opensearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.opensearch.action.search.SearchAction;
 import org.opensearch.action.search.SearchRequestBuilder;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.client.Client;
 import org.opensearch.client.OpenSearchClient;
+import org.opensearch.cluster.health.ClusterHealthStatus;
 import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.common.action.ActionFuture;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.core.common.Strings;
@@ -54,6 +55,7 @@ import com.google.common.collect.ImmutableMap;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -140,7 +142,9 @@ public class MLModelAutoReDeployer {
                 );
             return;
         }
-        triggerAutoDeployModels(addedNodes);
+
+        CompletableFuture.runAsync(() -> triggerAutoDeployModels(addedNodes));
+
     }
 
     public void redeployAModel() {
@@ -156,6 +160,7 @@ public class MLModelAutoReDeployer {
         triggerModelRedeploy(modelAutoRedeployArrangement);
     }
 
+    @SneakyThrows
     private void triggerAutoDeployModels(List<String> addedNodes) {
         ActionListener<SearchResponse> listener = ActionListener.wrap(res -> {
             if (res != null && res.getHits() != null && res.getHits().getTotalHits() != null && res.getHits().getTotalHits().value > 0) {
@@ -181,16 +186,14 @@ public class MLModelAutoReDeployer {
                 redeployAModel();
             }
         },
-            e -> { log.error("Failed to query need auto redeploy models, no action will be performed, addedNodes are: {}", addedNodes, e); }
+            e -> { log.error("JMD Failed to query need auto redeploy models, no action will be performed, addedNodes are: {}", addedNodes, e); }
         );
-
+        getClusterHealth();
         queryRunningModels(listener);
     }
 
-    @SneakyThrows
     private void triggerUndeployModelsOnDataNodes(List<String> dataNodeIds) {
         List<String> modelIds = new ArrayList<>();
-        AtomicInteger queryRunningModelFailed = new AtomicInteger(0);
         ActionListener<SearchResponse> listener = ActionListener.wrap(res -> {
             if (res != null && res.getHits() != null && res.getHits().getTotalHits() != null && res.getHits().getTotalHits().value > 0) {
                 Arrays.stream(res.getHits().getHits()).forEach(x -> modelIds.add(x.getId()));
@@ -205,18 +208,21 @@ public class MLModelAutoReDeployer {
                     client.execute(MLUndeployModelAction.INSTANCE, undeployModelNodesRequest, undeployModelListener);
                 }
             }
-        }, e -> {
-            log.error("Failed to query need undeploy models, retry {}", queryRunningModelFailed.addAndGet(1));
-        });
+        }, e -> { log.error("Failed to query need undeploy models, no action will be performed"); });
+        queryRunningModels(listener);
+    }
 
-        do {
-            TimeUnit.SECONDS.sleep(3);
-            queryRunningModels(listener);
-        } while(queryRunningModelFailed.get() > 0 && queryRunningModelFailed.get() < 10);
-
+    private void getClusterHealth() {
+        log.info(" JMD First get the cluster health");
+        ClusterHealthRequest request = new ClusterHealthRequest();
+        request.waitForYellowStatus();
+        ActionFuture<ClusterHealthResponse> response = client.admin().cluster().health(request);
+        ClusterHealthStatus status = response.actionGet().getStatus();
+        log.info(" JMD The cluster status is now {}", status);
     }
 
     private void queryRunningModels(ActionListener<SearchResponse> listener) {
+        log.info(" JMD Now get the queryRunningModels async");
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         TermsQueryBuilder builder = new TermsQueryBuilder(
             MLModel.MODEL_STATE_FIELD,
