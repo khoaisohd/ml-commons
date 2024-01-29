@@ -83,7 +83,7 @@ public class MLEngine {
     }
 
     private boolean isModelRepoEndpoint(String hostName, String modelRepoEndpoint) {
-        return hostName.contains(modelRepoEndpoint);
+        return modelRepoEndpoint.contains(hostName);
     }
 
     private void conditionalLoadCustomLibStdc() {
