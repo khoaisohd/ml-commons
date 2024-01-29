@@ -109,7 +109,7 @@ public class AwsConnectorExecutor implements RemoteConnectorExecutor{
         final int statusCode = response.httpResponse().statusCode();
         final AbortableInputStream responseBody =
                 response.responseBody().orElseThrow(
-                        () -> new OpenSearchStatusException("No response from model", RestStatus.BAD_REQUEST));
+                        () -> new OpenSearchStatusException("Failed to invoke download", RestStatus.BAD_REQUEST));
 
         if (statusCode < 200 || statusCode >= 300) {
             throw new OpenSearchStatusException(

@@ -1,5 +1,6 @@
 package org.opensearch.ml.common.transport.register;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -148,6 +149,31 @@ public class MLRegisterModelInputTest {
                                                 .build()))
                         .build())
                 .build();
+    }
+
+    @Test
+    public void constructor_CorrectUrlConnector() {
+        final MLRegisterModelInput input =  MLRegisterModelInput.builder()
+                .modelName(modelName)
+                .version(version)
+                .modelGroupId(modelGroupId)
+                .modelFormat(MLModelFormat.ONNX)
+                .modelConfig(config)
+                .urlConnector(HttpConnector.builder()
+                        .name("urlConnectorName")
+                        .protocol("http")
+                        .actions(
+                                List.of(
+                                        ConnectorAction
+                                                .builder()
+                                                .actionType(ConnectorAction.ActionType.DOWNLOAD)
+                                                .method("GET")
+                                                .url("url")
+                                                .build()))
+                        .build())
+                .build();
+
+        Assert.assertEquals("urlConnectorName", input.getUrlConnector().getName());
     }
 
     @Test
