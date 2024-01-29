@@ -15,16 +15,20 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import org.opensearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.opensearch.action.search.SearchAction;
 import org.opensearch.action.search.SearchRequestBuilder;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.client.Client;
 import org.opensearch.client.OpenSearchClient;
+import org.opensearch.cluster.health.ClusterHealthStatus;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.settings.Settings;
+import org.opensearch.common.unit.TimeValue;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.core.common.Strings;
 import org.opensearch.index.query.TermsQueryBuilder;
@@ -200,7 +204,34 @@ public class MLModelAutoReDeployer {
                 }
             }
         }, e -> { log.error("Failed to query need undeploy models, no action will be performed"); });
+
+        // For the corner case, data nodes that have the model index shards are restarted. When
+        // they joined the cluster, the model auto-deployment is triggered before the model index shards
+        // are allocated. Let wait for model index shards allocated
+        waitForModelIndexQueryable();
         queryRunningModels(listener);
+    }
+
+    private void waitForModelIndexQueryable() {
+        log.debug("Waiting model index for yellow health status ...");
+        // We can just wait for the health status of the model index become yellow
+        // then the model index should be queryable
+        final ClusterHealthRequest request =
+                new ClusterHealthRequest()
+                        .indices(ML_MODEL_INDEX)
+                        // Wait for while to make sure model index primary shards are allocated
+                        .timeout(new TimeValue(5, TimeUnit.MINUTES))
+                        .waitForYellowStatus();
+
+        final ClusterHealthStatus status =
+                client
+                        .admin()
+                        .cluster()
+                        .health(request)
+                        .actionGet()
+                        .getStatus();
+
+        log.debug("Model Index health status: {}", status);
     }
 
     private void queryRunningModels(ActionListener<SearchResponse> listener) {
