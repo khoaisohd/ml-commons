@@ -327,7 +327,7 @@ public class MachineLearningPlugin extends Plugin implements ActionPlugin, Searc
 
         Encryptor encryptor = new EncryptorImpl(clusterService, client);
 
-        mlEngine = new MLEngine(dataPath, encryptor);
+        mlEngine = new MLEngine(dataPath, encryptor, settings);
         nodeHelper = new DiscoveryNodeHelper(clusterService, settings);
         modelCacheHelper = new MLModelCacheHelper(clusterService, settings);
         cmHandler = new OpenSearchConversationalMemoryHandler(client, clusterService);
@@ -466,7 +466,6 @@ public class MachineLearningPlugin extends Plugin implements ActionPlugin, Searc
             mlIndicesHandler,
             encryptor
         );
-
         // TODO move this into MLFeatureEnabledSetting
         // search processor factories below will get BooleanSupplier that supplies the current value being updated through this.
         clusterService
@@ -689,7 +688,10 @@ public class MachineLearningPlugin extends Plugin implements ActionPlugin, Searc
                 MLCommonsSettings.ML_COMMONS_REMOTE_INFERENCE_ENABLED,
                 MLCommonsSettings.ML_COMMONS_UPDATE_CONNECTOR_ENABLED,
                 MLCommonsSettings.ML_COMMONS_MEMORY_FEATURE_ENABLED,
-                MLCommonsSettings.ML_COMMONS_RAG_PIPELINE_FEATURE_ENABLED
+                MLCommonsSettings.ML_COMMONS_RAG_PIPELINE_FEATURE_ENABLED,
+                MLCommonsSettings.ML_COMMON_MODEL_REPO_ENDPOINT,
+                MLCommonsSettings.ML_COMMON_MODEL_METALIST_ENDPOINT
+
             );
         return settings;
     }

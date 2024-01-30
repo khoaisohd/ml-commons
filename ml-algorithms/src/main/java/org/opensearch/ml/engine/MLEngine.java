@@ -5,8 +5,12 @@
 
 package org.opensearch.ml.engine;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
+import org.opensearch.common.settings.Setting;
+import org.opensearch.common.settings.Settings;
 import org.opensearch.ml.common.FunctionName;
 import org.opensearch.ml.common.MLModel;
 import org.opensearch.ml.common.dataframe.DataFrame;
@@ -29,9 +33,22 @@ import java.util.Map;
 @Log4j2
 public class MLEngine {
 
+    public static final Setting<String> ML_COMMON_MODEL_REPO_ENDPOINT =
+            Setting.simpleString(
+                    "plugins.ml_commons.model_repo_endpoint",
+                    Setting.Property.NodeScope,
+                    Setting.Property.Dynamic);
+    public static final Setting<String> ML_COMMON_MODEL_METALIST_ENDPOINT =
+            Setting.simpleString(
+                    "plugins.ml_commons.model_metalist_endpoint",
+                    Setting.Property.NodeScope,
+                    Setting.Property.Dynamic);
+
+
     public static final String REGISTER_MODEL_FOLDER = "register";
     public static final String DEPLOY_MODEL_FOLDER = "deploy";
-    private final String MODEL_REPO = "https://artifacts.opensearch.org/models/ml-models";
+    private final String modelRepoEndpoint;
+    private final String modelMetalistEndpoint;
 
     @Getter
     private final Path mlConfigPath;
@@ -42,17 +59,31 @@ public class MLEngine {
 
     private Encryptor encryptor;
 
-    public MLEngine(Path opensearchDataFolder, Encryptor encryptor) {
+    public MLEngine(Path opensearchDataFolder, Encryptor encryptor, Settings settings) {
         this.mlCachePath = opensearchDataFolder.resolve("ml_cache");
         this.mlModelsCachePath = mlCachePath.resolve("models_cache");
         this.mlConfigPath = mlCachePath.resolve("config");
         this.encryptor = encryptor;
+        this.modelRepoEndpoint = ML_COMMON_MODEL_REPO_ENDPOINT.get(settings);
+        this.modelMetalistEndpoint = ML_COMMON_MODEL_METALIST_ENDPOINT.get(settings);
+
+        // TODO : Temporary workaround as we current code does not handle SAN certs properly
+        //  Turning off host name validation
+        final HostnameVerifier hostnameVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
+        HttpsURLConnection.setDefaultHostnameVerifier(
+                (hostName, session) ->
+                        isModelRepoEndpoint(hostName, this.modelRepoEndpoint) ||
+                                hostnameVerifier.verify(hostName, session));
 
         //TODO - This is a hack and can be fixed when djl.ai build has up to date logic
         // User might want to load their own libstdc++.so.6 instead of one provided by djl
         // Refer: https://github.com/deepjavalibrary/djl/pull/2929
         // Refer: https://github.com/deepjavalibrary/djl/issues/2919
         conditionalLoadCustomLibStdc();
+    }
+
+    private boolean isModelRepoEndpoint(String hostName, String modelRepoEndpoint) {
+        return modelRepoEndpoint.contains(hostName);
     }
 
     private void conditionalLoadCustomLibStdc() {
@@ -69,12 +100,12 @@ public class MLEngine {
     }
 
     public String getPrebuiltModelMetaListPath() {
-        return "https://artifacts.opensearch.org/models/ml-models/model_listing/pre_trained_models.json";
+        return this.modelMetalistEndpoint;
     }
 
     public String getPrebuiltModelConfigPath(String modelName, String version, MLModelFormat modelFormat) {
         String format = modelFormat.name().toLowerCase(Locale.ROOT);
-        return String.format("%s/%s/%s/%s/config.json", MODEL_REPO, modelName, version, format, Locale.ROOT);
+        return String.format("%s/%s/%s/%s/config.json", this.modelRepoEndpoint, modelName, version, format, Locale.ROOT);
     }
 
     public String getPrebuiltModelPath(String modelName, String version, MLModelFormat modelFormat) {
@@ -83,7 +114,7 @@ public class MLEngine {
         // /huggingface/sentence-transformers/msmarco-distilbert-base-tas-b/1.0.0/onnx/config.json
         String format = modelFormat.name().toLowerCase(Locale.ROOT);
         String modelZipFileName = modelName.substring(index).replace("/", "_") + "-" + version + "-" + format;
-        return String.format("%s/%s/%s/%s/%s.zip", MODEL_REPO, modelName, version, format, modelZipFileName, Locale.ROOT);
+        return String.format("%s/%s/%s/%s/%s.zip", this.modelRepoEndpoint, modelName, version, format, modelZipFileName, Locale.ROOT);
     }
 
     public Path getRegisterModelPath(String modelId, String modelName, String version) {
