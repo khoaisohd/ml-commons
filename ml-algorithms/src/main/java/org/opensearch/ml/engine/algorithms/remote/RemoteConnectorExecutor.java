@@ -10,6 +10,7 @@ import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.ml.common.FunctionName;
 import org.opensearch.ml.common.connector.Connector;
+import org.opensearch.ml.common.connector.ConnectorAction;
 import org.opensearch.ml.common.dataset.MLInputDataset;
 import org.opensearch.ml.common.dataset.TextDocsInputDataSet;
 import org.opensearch.ml.common.dataset.remote.RemoteInferenceInputDataSet;
@@ -18,6 +19,8 @@ import org.opensearch.ml.common.output.model.ModelTensorOutput;
 import org.opensearch.ml.common.output.model.ModelTensors;
 import org.opensearch.script.ScriptService;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -76,5 +79,33 @@ public interface RemoteConnectorExecutor {
 
     void invokeRemoteModel(MLInput mlInput, Map<String, String> parameters, String payload, List<ModelTensors> tensorOutputs);
 
+    /**
+     * Execute DOWNLOAD action
+     * @param parameters the parameters used to customize download endpoint and payload
+     * @return the content as input stream
+     */
+    default InputStream executeDownload(Map<String, String> parameters) throws IOException {
+        final Connector connector = getConnector();
 
+        final Map<String, String> downloadParameters = new HashMap<>();
+        if (connector.getParameters() != null) {
+            downloadParameters.putAll(connector.getParameters());
+        }
+        
+        if (parameters != null) {
+            downloadParameters.putAll(parameters);
+        }
+
+        final String payload = connector.createPayload(ConnectorAction.ActionType.DOWNLOAD, downloadParameters);
+        connector.validatePayload(payload);
+        return invokeDownload(downloadParameters, payload);
+    }
+
+    /**
+     * Execute invoke download from remote service
+     * @param parameters the action parameters
+     * @param payload the request payload
+     * @return the {@link InputStream}
+     */
+    InputStream invokeDownload(Map<String, String> parameters, String payload) throws IOException;
 }

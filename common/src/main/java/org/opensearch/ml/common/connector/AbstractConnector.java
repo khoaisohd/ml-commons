@@ -113,8 +113,13 @@ public abstract class AbstractConnector implements Connector {
 
     @Override
     public Optional<ConnectorAction> findPredictAction() {
+        return findAction(ConnectorAction.ActionType.PREDICT);
+    }
+
+    @Override
+    public Optional<ConnectorAction> findAction(ConnectorAction.ActionType actionType) {
         if (actions != null) {
-            return actions.stream().filter(a -> a.getActionType() == ConnectorAction.ActionType.PREDICT).findFirst();
+            return actions.stream().filter(a -> a.getActionType() == actionType).findFirst();
         }
         return Optional.empty();
     }
@@ -128,16 +133,21 @@ public abstract class AbstractConnector implements Connector {
 
     @Override
     public String getPredictEndpoint(Map<String, String> parameters) {
-        Optional<ConnectorAction> predictAction = findPredictAction();
-        if (!predictAction.isPresent()) {
+        return getEndpoint(ConnectorAction.ActionType.PREDICT, parameters);
+    }
+
+    @Override
+    public String getEndpoint(ConnectorAction.ActionType actionType, Map<String, String> parameters) {
+        final Optional<ConnectorAction> action = findAction(actionType);
+        if (!action.isPresent()) {
             return null;
         }
-        String predictEndpoint = predictAction.get().getUrl();
+        String endpoint = action.get().getUrl();
         if (parameters != null && parameters.size() > 0) {
-            StringSubstitutor substitutor = new StringSubstitutor(parameters, "${parameters.", "}");
-            predictEndpoint = substitutor.replace(predictEndpoint);
+            final StringSubstitutor substitutor = new StringSubstitutor(parameters, "${parameters.", "}");
+            endpoint = substitutor.replace(endpoint);
         }
-        return predictEndpoint;
+        return endpoint;
     }
 
 }

@@ -596,7 +596,7 @@ public class MLModelManager {
     }
 
     private void uploadModel(MLRegisterModelInput registerModelInput, MLTask mlTask, String modelVersion) throws PrivilegedActionException {
-        if (registerModelInput.getUrl() != null) {
+        if (registerModelInput.getUrl() != null || registerModelInput.getUrlConnector() != null) {
             registerModelFromUrl(registerModelInput, mlTask, modelVersion);
         } else if (registerModelInput.getFunctionName() == FunctionName.REMOTE || registerModelInput.getConnectorId() != null) {
             indexRemoteModel(registerModelInput, mlTask, modelVersion);
