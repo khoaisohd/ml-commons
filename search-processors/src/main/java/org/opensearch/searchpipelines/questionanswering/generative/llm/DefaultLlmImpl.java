@@ -170,12 +170,12 @@ public class DefaultLlmImpl implements Llm {
                 }
             }
         } else if (provider == ModelProvider.OCI_GENAI) {
-            final List generatedTexts = (List) dataAsMap.get("generatedTexts");
-            log.debug("OCI genai generatedTexts: {}", generatedTexts);
-            // OCI GENAI successful response format: { generatedTexts: [[{text: "answer"}]] }
+            final Map inferenceResponse = (Map) dataAsMap.get("inferenceResponse");
+            log.debug("OCI genai inferenceResponse response: {}", inferenceResponse);
+            // OCI GENAI successful response format: { inferenceResponse: { generatedTexts: [{text: "answer"}] }}
             // OCI GENAI failure response format: {"code": "errorCode", "message": "errorMessage"}
-            if (generatedTexts != null && !generatedTexts.isEmpty()) {
-                List choices = (List) generatedTexts.get(0);
+            if (inferenceResponse != null && inferenceResponse.containsKey("generatedTexts")) {
+                List choices = (List) inferenceResponse.get("generatedTexts");
                 if (choices == null || choices.isEmpty()) {
                     errors = List.of("Missing answer");
                 } else {
