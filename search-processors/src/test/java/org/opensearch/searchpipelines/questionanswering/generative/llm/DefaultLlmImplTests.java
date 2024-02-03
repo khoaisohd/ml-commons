@@ -239,8 +239,11 @@ public class DefaultLlmImplTests extends OpenSearchTestCase {
         DefaultLlmImpl connector = new DefaultLlmImpl("model_id", client);
         connector.setMlClient(mlClient);
 
-        Map<String, ?> dataAsMap = Map.of("generatedTexts", List.of(
-                List.of(Map.of("text", "answer"))));
+        final Map<String, ?> dataAsMap =
+                Map.of(
+                        "inferenceResponse", Map.of(
+                                "generatedTexts", List.of(
+                                        Map.of("text", "answer"))));
         ModelTensor tensor = new ModelTensor("tensor", new Number[0], new long[0], MLResultDataType.STRING, null, null, dataAsMap);
         ModelTensorOutput mlOutput = new ModelTensorOutput(List.of(new ModelTensors(List.of(tensor))));
         ActionFuture<MLOutput> future = mock(ActionFuture.class);
@@ -269,8 +272,10 @@ public class DefaultLlmImplTests extends OpenSearchTestCase {
         DefaultLlmImpl connector = new DefaultLlmImpl("model_id", client);
         connector.setMlClient(mlClient);
 
-        Map<String, ?> dataAsMap = Map.of("generatedTexts", List.of(
-                Collections.emptyList()));
+        final Map<String, ?> dataAsMap =
+                Map.of(
+                        "inferenceResponse", Map.of(
+                                "generatedTexts", List.of()));
         ModelTensor tensor = new ModelTensor("tensor", new Number[0], new long[0], MLResultDataType.STRING, null, null, dataAsMap);
         ModelTensorOutput mlOutput = new ModelTensorOutput(List.of(new ModelTensors(List.of(tensor))));
         ActionFuture<MLOutput> future = mock(ActionFuture.class);
