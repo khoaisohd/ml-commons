@@ -69,7 +69,7 @@ dependencies {
     implementation 'software.amazon.awssdk:apache-client'
     implementation 'com.amazonaws:aws-encryption-sdk-java:2.4.1'
     implementation 'com.jayway.jsonpath:json-path:2.8.0'
-    implementation group: 'org.json', name: 'json', version: '20230227'
+    implementation group: 'org.json', name: 'json', version: '20231013'
 
     implementation("com.oracle.oci.sdk:oci-java-sdk-common:2.38.0") {
         // Exclude org.bouncycastle:bcprov-jdk15on to avoid conflict with bcprov-ext-jdk18on
