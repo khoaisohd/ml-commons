@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.opensearch.common.settings.Settings;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.ml.common.MLModel;
@@ -54,7 +55,7 @@ public class MLEngineTest {
     @Before
     public void setUp() {
         Encryptor encryptor = new EncryptorImpl("m+dWmfmnNRiNlOdej/QelEkvMTyH//frS2TBeS2BP4w=");
-        mlEngine = new MLEngine(Path.of("/tmp/test" + UUID.randomUUID()), encryptor);
+        mlEngine = new MLEngine(Path.of("/tmp/test" + UUID.randomUUID()), encryptor, Settings.EMPTY);
     }
 
     @Test

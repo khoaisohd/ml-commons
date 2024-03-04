@@ -19,7 +19,6 @@ import com.oracle.bmc.http.signing.RequestSigner;
 import com.oracle.bmc.requests.BmcRequest;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.SneakyThrows;
 import lombok.Synchronized;
 import lombok.extern.log4j.Log4j2;
 import org.opensearch.OpenSearchStatusException;
@@ -39,6 +38,8 @@ import javax.ws.rs.core.Response;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -55,6 +56,7 @@ import static org.opensearch.ml.engine.algorithms.remote.ConnectorUtils.processO
 @Log4j2
 @ConnectorExecutor(OCI_SIGV1)
 public class OciConnectorExecutor implements RemoteConnectorExecutor{
+    private static final String OPC_REQUEST_ID_HEADER = "opc-request-id";
 
     @Getter
     private final OciConnector connector;
@@ -83,7 +85,10 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
             final String modelResponse = ConnectorUtils.getInputStreamContent((InputStream) response.getEntity());
             final int statusCode = response.getStatus();
             if (statusCode < 200 || statusCode >= 300) {
-                throw new OpenSearchStatusException(REMOTE_SERVICE_ERROR + modelResponse, RestStatus.fromCode(statusCode));
+                final String opcRequestId = response.getHeaderString(OPC_REQUEST_ID_HEADER);
+                throw new OpenSearchStatusException(
+                        REMOTE_SERVICE_ERROR + modelResponse + " opc request id: " + opcRequestId,
+                        RestStatus.fromCode(statusCode));
             }
 
             final ModelTensors tensors = processOutput(modelResponse, connector, scriptService, parameters);
@@ -103,7 +108,7 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
         final InputStream responseEntity = (InputStream) response.getEntity();
 
         if (statusCode < 200 || statusCode >= 300) {
-            final String opcRequestId = response.getHeaderString("opc-request-id");
+            final String opcRequestId = response.getHeaderString(OPC_REQUEST_ID_HEADER);
             final String requestBodyContent = ConnectorUtils.getInputStreamContent(responseEntity);
             throw new OpenSearchStatusException(
                     REMOTE_SERVICE_ERROR + requestBodyContent + " opc request id: " + opcRequestId,
@@ -115,6 +120,7 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
 
 
      private Response makeHttpCall(String endpoint, String httpMethod, String payload) {
+         final Instant startInstant  = Instant.now();
          final WebTarget target = getWebTarget(endpoint);
          final WrappedInvocationBuilder wrappedIb = new WrappedInvocationBuilder(target.request(), target.getUri());
          final Response response;
@@ -128,6 +134,13 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
              default:
                  throw new IllegalArgumentException("unsupported http method");
          }
+
+         final Instant endInstant  = Instant.now();
+         final String opcRequestId = response.getHeaderString(OPC_REQUEST_ID_HEADER);
+         log.info(
+                 "OciConnectorExecutor::makeHttpCall, call time in millis: {}, opc request id: {}",
+                 Duration.between(startInstant, endInstant).toMillis(), opcRequestId);
+
          return response;
     }
 
