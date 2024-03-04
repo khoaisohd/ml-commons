@@ -174,8 +174,8 @@ public class OciConnectorExecutor implements RemoteConnectorExecutor{
         switch (authType) {
             case RESOURCE_PRINCIPAL:
                 return ResourcePrincipalAuthenticationDetailsProvider.builder().build();
-            case INSTANCE_PRINCIPAL:
-                return InstancePrincipalsAuthenticationDetailsProvider.builder().build();
+//            case INSTANCE_PRINCIPAL:
+//                return InstancePrincipalsAuthenticationDetailsProvider.builder().build();
             case USER_PRINCIPAL:
                 return SimpleAuthenticationDetailsProvider.builder()
                         .tenantId(parameters.get(OciConnector.TENANT_ID_FIELD))
