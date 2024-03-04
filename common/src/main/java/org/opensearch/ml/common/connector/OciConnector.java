@@ -113,7 +113,9 @@ public class OciConnector extends HttpConnector {
      */
     public enum OciClientAuthType {
         RESOURCE_PRINCIPAL,
-        INSTANCE_PRINCIPAL,
+        // Disable instance principal fow now, since it can be used to call other OCI services or OS internal
+        // management plane APIs. Let address that properly after GA https://jira.oci.oraclecorp.com/browse/ES-5675
+        // INSTANCE_PRINCIPAL,
         USER_PRINCIPAL;
 
         public static OciClientAuthType from(String value) {
