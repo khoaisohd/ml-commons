@@ -129,15 +129,10 @@ public final class MLCommonsSettings {
             "plugins.ml_commons.trusted_connector_endpoints_regex",
             ImmutableList
                 .of(
-                    "^https://runtime\\.sagemaker\\..*[a-z0-9-]\\.amazonaws\\.com/.*$",
-                    "^https://api\\.openai\\.com/.*$",
-                    "^https://api\\.cohere\\.ai/.*$",
-                    "^https://bedrock-runtime\\..*[a-z0-9-]\\.amazonaws\\.com/.*$",
                     "^https://.*generativeai\\..*\\.oci\\..*\\.com/.*$"
                 ),
             Function.identity(),
-            Setting.Property.NodeScope,
-            Setting.Property.Dynamic
+            Setting.Property.NodeScope
         );
 
     /**
