@@ -52,7 +52,7 @@ public class RestMLRegisterModelAction extends BaseRestHandler {
      */
     public RestMLRegisterModelAction(ClusterService clusterService, Settings settings, MLFeatureEnabledSetting mlFeatureEnabledSetting) {
         isModelUrlAllowed = ML_COMMONS_ALLOW_MODEL_URL.get(settings);
-//        clusterService.getClusterSettings().addSettingsUpdateConsumer(ML_COMMONS_ALLOW_MODEL_URL, it -> isModelUrlAllowed = it);
+        clusterService.getClusterSettings().addSettingsUpdateConsumer(ML_COMMONS_ALLOW_MODEL_URL, it -> isModelUrlAllowed = it);
         this.mlFeatureEnabledSetting = mlFeatureEnabledSetting;
     }
 

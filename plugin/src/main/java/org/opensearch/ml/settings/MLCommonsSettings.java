@@ -132,8 +132,8 @@ public final class MLCommonsSettings {
                     "^https://.*generativeai\\..*\\.oci\\..*\\.com/.*$"
                 ),
             Function.identity(),
-            Setting.Property.NodeScope,
-            Setting.Property.Dynamic
+            Setting.Property.NodeScope
+//            Setting.Property.Dynamic
         );
 
     /**

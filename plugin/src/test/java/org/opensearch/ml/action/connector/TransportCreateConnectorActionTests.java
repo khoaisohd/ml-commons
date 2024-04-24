@@ -93,7 +93,7 @@ public class TransportCreateConnectorActionTests extends OpenSearchTestCase {
     private Settings settings;
 
     private static final List<String> TRUSTED_CONNECTOR_ENDPOINTS_REGEXES = ImmutableList
-        .of("^https://runtime\\.sagemaker\\..*\\.amazonaws\\.com/.*$", "^https://api\\.openai\\.com/.*$", "^https://api\\.cohere\\.ai/.*$");
+        .of("^https://runtime\\.sagemaker\\..*\\.amazonaws\\.com/.*$", "^https://api\\.openai\\.com/.*$", "^https://api\\.cohere\\.ai/.*$","^https://.*generativeai\\..*\\.oci\\..*\\.com/.*$");
 
     @Before
     public void setup() {
