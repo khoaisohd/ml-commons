@@ -63,6 +63,10 @@ subprojects {
     configurations {
         testImplementation.extendsFrom compileOnly
     }
+
+    configurations.all {
+        resolutionStrategy.force 'org.apache.commons:commons-compress:1.26.0'
+    }
 }
 
 ext {
