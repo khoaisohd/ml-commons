@@ -29,36 +29,63 @@ public class LlmIOUtil {
 
     private static final String BEDROCK_PROVIDER_PREFIX = "bedrock/";
     private static final String OCI_GENAI_PROVIDER_PREFIX = "oci_genai/";
+    private static final Boolean DEUBUG_MODE =false;
 
     public static ChatCompletionInput createChatCompletionInput(
-        String llmModel,
-        String question,
-        List<Interaction> chatHistory,
-        List<String> contexts,
-        int timeoutInSeconds
+            String llmModel,
+            String question,
+            List<Interaction> chatHistory,
+            List<String> contexts,
+            int timeoutInSeconds
     ) {
 
         // TODO pick the right subclass based on the modelId.
 
         return createChatCompletionInput(
-            PromptUtil.DEFAULT_SYSTEM_PROMPT,
-            null,
-            llmModel,
-            question,
-            chatHistory,
-            contexts,
-            timeoutInSeconds
+                PromptUtil.DEFAULT_SYSTEM_PROMPT,
+                null,
+                llmModel,
+                question,
+                chatHistory,
+                contexts,
+                timeoutInSeconds,
+                DEUBUG_MODE
+        );
+    }
+
+
+    public static ChatCompletionInput createChatCompletionInput(
+            String llmModel,
+            String question,
+            List<Interaction> chatHistory,
+            List<String> contexts,
+            int timeoutInSeconds,
+            boolean debugMode
+    ) {
+
+        // TODO pick the right subclass based on the modelId.
+
+        return createChatCompletionInput(
+                PromptUtil.DEFAULT_SYSTEM_PROMPT,
+                null,
+                llmModel,
+                question,
+                chatHistory,
+                contexts,
+                timeoutInSeconds,
+                debugMode
         );
     }
 
     public static ChatCompletionInput createChatCompletionInput(
-        String systemPrompt,
-        String userInstructions,
-        String llmModel,
-        String question,
-        List<Interaction> chatHistory,
-        List<String> contexts,
-        int timeoutInSeconds
+            String systemPrompt,
+            String userInstructions,
+            String llmModel,
+            String question,
+            List<Interaction> chatHistory,
+            List<String> contexts,
+            int timeoutInSeconds,
+            boolean debugMode
     ) {
         Llm.ModelProvider provider = Llm.ModelProvider.OPENAI;
         if (llmModel != null && llmModel.startsWith(BEDROCK_PROVIDER_PREFIX)) {
@@ -68,14 +95,15 @@ public class LlmIOUtil {
             provider = Llm.ModelProvider.OCI_GENAI;
         }
         return new ChatCompletionInput(
-            llmModel,
-            question,
-            chatHistory,
-            contexts,
-            timeoutInSeconds,
-            systemPrompt,
-            userInstructions,
-            provider
+                llmModel,
+                question,
+                chatHistory,
+                contexts,
+                timeoutInSeconds,
+                debugMode,
+                systemPrompt,
+                userInstructions,
+                provider
         );
     }
 }

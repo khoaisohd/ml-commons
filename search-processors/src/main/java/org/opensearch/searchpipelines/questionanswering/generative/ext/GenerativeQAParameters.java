@@ -70,6 +70,10 @@ public class GenerativeQAParameters implements Writeable, ToXContentObject {
     // from a remote inference endpoint before timing out the request.
     private static final ParseField TIMEOUT = new ParseField("timeout");
 
+    // Optional parameter; this parameter contorls debugging mode.
+    // If set to true, customer data will be printed in logs to allow debug. Should be false by default
+    private static final ParseField DEBUG_MODE = new ParseField("debug_mode");
+
     public static final int SIZE_NULL_VALUE = -1;
 
     static {
@@ -80,6 +84,7 @@ public class GenerativeQAParameters implements Writeable, ToXContentObject {
         PARSER.declareIntOrNull(GenerativeQAParameters::setContextSize, SIZE_NULL_VALUE, CONTEXT_SIZE);
         PARSER.declareIntOrNull(GenerativeQAParameters::setInteractionSize, SIZE_NULL_VALUE, INTERACTION_SIZE);
         PARSER.declareIntOrNull(GenerativeQAParameters::setTimeout, SIZE_NULL_VALUE, TIMEOUT);
+        PARSER.declareBoolean(GenerativeQAParameters::setDebugMode, DEBUG_MODE);
     }
 
     @Setter
@@ -106,13 +111,17 @@ public class GenerativeQAParameters implements Writeable, ToXContentObject {
     @Getter
     private Integer timeout;
 
+    @Setter
+    @Getter
+    private Boolean debugMode;
+
     public GenerativeQAParameters(
-        String conversationId,
-        String llmModel,
-        String llmQuestion,
-        Integer contextSize,
-        Integer interactionSize,
-        Integer timeout
+            String conversationId,
+            String llmModel,
+            String llmQuestion,
+            Integer contextSize,
+            Integer interactionSize,
+            Integer timeout
     ) {
         this.conversationId = conversationId;
         this.llmModel = llmModel;
@@ -124,7 +133,34 @@ public class GenerativeQAParameters implements Writeable, ToXContentObject {
         this.contextSize = (contextSize == null) ? SIZE_NULL_VALUE : contextSize;
         this.interactionSize = (interactionSize == null) ? SIZE_NULL_VALUE : interactionSize;
         this.timeout = (timeout == null) ? SIZE_NULL_VALUE : timeout;
+        this.debugMode = false;
     }
+
+
+
+
+    public GenerativeQAParameters(
+            String conversationId,
+            String llmModel,
+            String llmQuestion,
+            Integer contextSize,
+            Integer interactionSize,
+            Integer timeout,
+            Boolean debugMode
+    ) {
+        this.conversationId = conversationId;
+        this.llmModel = llmModel;
+
+        // TODO: keep this requirement until we can extract the question from the query or from the request processor parameters
+        // for question rewriting.
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(llmQuestion), LLM_QUESTION.getPreferredName() + " must be provided.");
+        this.llmQuestion = llmQuestion;
+        this.contextSize = (contextSize == null) ? SIZE_NULL_VALUE : contextSize;
+        this.interactionSize = (interactionSize == null) ? SIZE_NULL_VALUE : interactionSize;
+        this.timeout = (timeout == null) ? SIZE_NULL_VALUE : timeout;
+        this.debugMode = debugMode;
+    }
+
 
     public GenerativeQAParameters(StreamInput input) throws IOException {
         this.conversationId = input.readOptionalString();
@@ -133,17 +169,24 @@ public class GenerativeQAParameters implements Writeable, ToXContentObject {
         this.contextSize = input.readInt();
         this.interactionSize = input.readInt();
         this.timeout = input.readInt();
+        try {
+            this.debugMode = input.readBoolean();
+        }catch (Exception e){
+            this.debugMode =false;
+        }
     }
 
     @Override
     public XContentBuilder toXContent(XContentBuilder xContentBuilder, Params params) throws IOException {
         return xContentBuilder
-            .field(CONVERSATION_ID.getPreferredName(), this.conversationId)
-            .field(LLM_MODEL.getPreferredName(), this.llmModel)
-            .field(LLM_QUESTION.getPreferredName(), this.llmQuestion)
-            .field(CONTEXT_SIZE.getPreferredName(), this.contextSize)
-            .field(INTERACTION_SIZE.getPreferredName(), this.interactionSize)
-            .field(TIMEOUT.getPreferredName(), this.timeout);
+                .field(CONVERSATION_ID.getPreferredName(), this.conversationId)
+                .field(LLM_MODEL.getPreferredName(), this.llmModel)
+                .field(LLM_QUESTION.getPreferredName(), this.llmQuestion)
+                .field(CONTEXT_SIZE.getPreferredName(), this.contextSize)
+                .field(INTERACTION_SIZE.getPreferredName(), this.interactionSize)
+                .field(TIMEOUT.getPreferredName(), this.timeout)
+                .field(DEBUG_MODE.getPreferredName(), this.debugMode);
+
     }
 
     @Override
@@ -156,6 +199,7 @@ public class GenerativeQAParameters implements Writeable, ToXContentObject {
         out.writeInt(contextSize);
         out.writeInt(interactionSize);
         out.writeInt(timeout);
+        out.writeBoolean(debugMode);
     }
 
     public static GenerativeQAParameters parse(XContentParser parser) throws IOException {
@@ -173,10 +217,11 @@ public class GenerativeQAParameters implements Writeable, ToXContentObject {
 
         GenerativeQAParameters other = (GenerativeQAParameters) o;
         return Objects.equals(this.conversationId, other.getConversationId())
-            && Objects.equals(this.llmModel, other.getLlmModel())
-            && Objects.equals(this.llmQuestion, other.getLlmQuestion())
-            && (this.contextSize == other.getContextSize())
-            && (this.interactionSize == other.getInteractionSize())
-            && (this.timeout == other.getTimeout());
+                && Objects.equals(this.llmModel, other.getLlmModel())
+                && Objects.equals(this.llmQuestion, other.getLlmQuestion())
+                && (this.contextSize == other.getContextSize())
+                && (this.interactionSize == other.getInteractionSize())
+                && (this.timeout == other.getTimeout())
+                && (this.debugMode == other.getDebugMode());
     }
 }

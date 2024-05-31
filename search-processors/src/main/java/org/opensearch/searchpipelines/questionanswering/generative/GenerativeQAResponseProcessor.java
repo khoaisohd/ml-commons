@@ -62,6 +62,7 @@ public class GenerativeQAResponseProcessor extends AbstractProcessor implements 
     private static final int DEFAULT_CHAT_HISTORY_WINDOW = 10;
 
     private static final int DEFAULT_PROCESSOR_TIME_IN_SECONDS = 30;
+    private static final boolean DEFAULT_DEBUG_MODE = false;
 
     // TODO Add "interaction_count". This is how far back in chat history we want to go back when calling LLM.
 
@@ -82,16 +83,16 @@ public class GenerativeQAResponseProcessor extends AbstractProcessor implements 
     private final BooleanSupplier featureFlagSupplier;
 
     protected GenerativeQAResponseProcessor(
-        Client client,
-        String tag,
-        String description,
-        boolean ignoreFailure,
-        Llm llm,
-        String llmModel,
-        List<String> contextFields,
-        String systemPrompt,
-        String userInstructions,
-        BooleanSupplier supplier
+            Client client,
+            String tag,
+            String description,
+            boolean ignoreFailure,
+            Llm llm,
+            String llmModel,
+            List<String> contextFields,
+            String systemPrompt,
+            String userInstructions,
+            BooleanSupplier supplier
     ) {
         super(tag, description, ignoreFailure);
         this.llmModel = llmModel;
@@ -120,6 +121,20 @@ public class GenerativeQAResponseProcessor extends AbstractProcessor implements 
         }
         log.info("Timeout for this request: {} seconds.", timeout);
 
+        Boolean debugMode =false;
+        try {
+            debugMode = params.getDebugMode();
+            if (debugMode==null){
+                debugMode=false;
+                log.info("debugMode not provide. Default value set to debugMode = {}", debugMode);
+            }else{
+                log.info("debugMode found = {}", debugMode);
+            }
+        }catch (Exception e){
+            log.info("Unable to retrieve debugMode parameter, or debugMode parameter not provided. debugMode will be set to false by default");
+        }
+
+
         String llmQuestion = params.getLlmQuestion();
         String llmModel = params.getLlmModel() == null ? this.llmModel : params.getLlmModel();
         if (llmModel == null) {
@@ -134,8 +149,8 @@ public class GenerativeQAResponseProcessor extends AbstractProcessor implements 
         }
         log.info("Using interaction size of {}", interactionSize);
         List<Interaction> chatHistory = (conversationId == null)
-            ? Collections.emptyList()
-            : memoryClient.getInteractions(conversationId, interactionSize);
+                ? Collections.emptyList()
+                : memoryClient.getInteractions(conversationId, interactionSize, debugMode);
         log.info("Retrieved chat history. ({})", getDuration(start));
 
         Integer topN = params.getContextSize();
@@ -148,10 +163,10 @@ public class GenerativeQAResponseProcessor extends AbstractProcessor implements 
         log.info("user_instructions: {}", userInstructions);
         start = Instant.now();
         ChatCompletionOutput output = llm
-            .doChatCompletion(
-                LlmIOUtil
-                    .createChatCompletionInput(systemPrompt, userInstructions, llmModel, llmQuestion, chatHistory, searchResults, timeout)
-            );
+                .doChatCompletion(
+                        LlmIOUtil
+                                .createChatCompletionInput(systemPrompt, userInstructions, llmModel, llmQuestion, chatHistory, searchResults, timeout, debugMode)
+                );
         log.info("doChatCompletion complete. ({})", getDuration(start));
 
         String answer = null;
@@ -165,14 +180,14 @@ public class GenerativeQAResponseProcessor extends AbstractProcessor implements 
             if (conversationId != null) {
                 start = Instant.now();
                 interactionId = memoryClient
-                    .createInteraction(
-                        conversationId,
-                        llmQuestion,
-                        PromptUtil.getPromptTemplate(systemPrompt, userInstructions),
-                        answer,
-                        GenerativeQAProcessorConstants.RESPONSE_PROCESSOR_TYPE,
-                        jsonArrayToString(searchResults)
-                    );
+                        .createInteraction(
+                                conversationId,
+                                llmQuestion,
+                                PromptUtil.getPromptTemplate(systemPrompt, userInstructions),
+                                answer,
+                                GenerativeQAProcessorConstants.RESPONSE_PROCESSOR_TYPE,
+                                jsonArrayToString(searchResults)
+                        );
                 log.info("Created a new interaction: {} ({})", interactionId, getDuration(start));
             }
         }
@@ -194,17 +209,17 @@ public class GenerativeQAResponseProcessor extends AbstractProcessor implements 
         // TODO return the interaction id in the response.
 
         return new GenerativeSearchResponse(
-            answer,
-            errorMessage,
-            response.getInternalResponse(),
-            response.getScrollId(),
-            response.getTotalShards(),
-            response.getSuccessfulShards(),
-            response.getSkippedShards(),
-            response.getSuccessfulShards(),
-            response.getShardFailures(),
-            response.getClusters(),
-            interactionId
+                answer,
+                errorMessage,
+                response.getInternalResponse(),
+                response.getScrollId(),
+                response.getTotalShards(),
+                response.getSuccessfulShards(),
+                response.getSkippedShards(),
+                response.getSuccessfulShards(),
+                response.getShardFailures(),
+                response.getClusters(),
+                interactionId
         );
     }
 
@@ -246,77 +261,77 @@ public class GenerativeQAResponseProcessor extends AbstractProcessor implements 
 
         @Override
         public SearchResponseProcessor create(
-            Map<String, Processor.Factory<SearchResponseProcessor>> processorFactories,
-            String tag,
-            String description,
-            boolean ignoreFailure,
-            Map<String, Object> config,
-            PipelineContext pipelineContext
+                Map<String, Processor.Factory<SearchResponseProcessor>> processorFactories,
+                String tag,
+                String description,
+                boolean ignoreFailure,
+                Map<String, Object> config,
+                PipelineContext pipelineContext
         ) throws Exception {
             if (this.featureFlagSupplier.getAsBoolean()) {
                 String modelId = ConfigurationUtils
-                    .readOptionalStringProperty(
-                        GenerativeQAProcessorConstants.RESPONSE_PROCESSOR_TYPE,
-                        tag,
-                        config,
-                        GenerativeQAProcessorConstants.CONFIG_NAME_MODEL_ID
-                    );
+                        .readOptionalStringProperty(
+                                GenerativeQAProcessorConstants.RESPONSE_PROCESSOR_TYPE,
+                                tag,
+                                config,
+                                GenerativeQAProcessorConstants.CONFIG_NAME_MODEL_ID
+                        );
                 String llmModel = ConfigurationUtils
-                    .readOptionalStringProperty(
-                        GenerativeQAProcessorConstants.RESPONSE_PROCESSOR_TYPE,
-                        tag,
-                        config,
-                        GenerativeQAProcessorConstants.CONFIG_NAME_LLM_MODEL
-                    );
+                        .readOptionalStringProperty(
+                                GenerativeQAProcessorConstants.RESPONSE_PROCESSOR_TYPE,
+                                tag,
+                                config,
+                                GenerativeQAProcessorConstants.CONFIG_NAME_LLM_MODEL
+                        );
                 List<String> contextFields = ConfigurationUtils
-                    .readList(
-                        GenerativeQAProcessorConstants.RESPONSE_PROCESSOR_TYPE,
-                        tag,
-                        config,
-                        GenerativeQAProcessorConstants.CONFIG_NAME_CONTEXT_FIELD_LIST
-                    );
+                        .readList(
+                                GenerativeQAProcessorConstants.RESPONSE_PROCESSOR_TYPE,
+                                tag,
+                                config,
+                                GenerativeQAProcessorConstants.CONFIG_NAME_CONTEXT_FIELD_LIST
+                        );
                 if (contextFields.isEmpty()) {
                     throw newConfigurationException(
-                        GenerativeQAProcessorConstants.RESPONSE_PROCESSOR_TYPE,
-                        tag,
-                        GenerativeQAProcessorConstants.CONFIG_NAME_CONTEXT_FIELD_LIST,
-                        "required property can't be empty."
+                            GenerativeQAProcessorConstants.RESPONSE_PROCESSOR_TYPE,
+                            tag,
+                            GenerativeQAProcessorConstants.CONFIG_NAME_CONTEXT_FIELD_LIST,
+                            "required property can't be empty."
                     );
                 }
                 String systemPrompt = ConfigurationUtils
-                    .readOptionalStringProperty(
-                        GenerativeQAProcessorConstants.RESPONSE_PROCESSOR_TYPE,
-                        tag,
-                        config,
-                        GenerativeQAProcessorConstants.CONFIG_NAME_SYSTEM_PROMPT
-                    );
+                        .readOptionalStringProperty(
+                                GenerativeQAProcessorConstants.RESPONSE_PROCESSOR_TYPE,
+                                tag,
+                                config,
+                                GenerativeQAProcessorConstants.CONFIG_NAME_SYSTEM_PROMPT
+                        );
                 String userInstructions = ConfigurationUtils
-                    .readOptionalStringProperty(
-                        GenerativeQAProcessorConstants.RESPONSE_PROCESSOR_TYPE,
-                        tag,
-                        config,
-                        GenerativeQAProcessorConstants.CONFIG_NAME_USER_INSTRUCTIONS
-                    );
+                        .readOptionalStringProperty(
+                                GenerativeQAProcessorConstants.RESPONSE_PROCESSOR_TYPE,
+                                tag,
+                                config,
+                                GenerativeQAProcessorConstants.CONFIG_NAME_USER_INSTRUCTIONS
+                        );
                 log
-                    .info(
-                        "model_id {}, llm_model {}, context_field_list {}, system_prompt {}, user_instructions {}",
-                        modelId,
+                        .info(
+                                "model_id {}, llm_model {}, context_field_list {}, system_prompt {}, user_instructions {}",
+                                modelId,
+                                llmModel,
+                                contextFields,
+                                systemPrompt,
+                                userInstructions
+                        );
+                return new GenerativeQAResponseProcessor(
+                        client,
+                        tag,
+                        description,
+                        ignoreFailure,
+                        ModelLocator.getLlm(modelId, client),
                         llmModel,
                         contextFields,
                         systemPrompt,
-                        userInstructions
-                    );
-                return new GenerativeQAResponseProcessor(
-                    client,
-                    tag,
-                    description,
-                    ignoreFailure,
-                    ModelLocator.getLlm(modelId, client),
-                    llmModel,
-                    contextFields,
-                    systemPrompt,
-                    userInstructions,
-                    featureFlagSupplier
+                        userInstructions,
+                        featureFlagSupplier
                 );
             } else {
                 throw new MLException(GenerativeQAProcessorConstants.FEATURE_NOT_ENABLED_ERROR_MSG);

@@ -102,12 +102,12 @@ public class GenerativeQAParametersTests extends OpenSearchTestCase {
         int interactionSize = 2;
         int timeout = 10;
         GenerativeQAParameters parameters = new GenerativeQAParameters(
-            conversationId,
-            llmModel,
-            llmQuestion,
-            contextSize,
-            interactionSize,
-            timeout
+                conversationId,
+                llmModel,
+                llmQuestion,
+                contextSize,
+                interactionSize,
+                timeout
         );
         StreamOutput output = new DummyStreamOutput();
         parameters.writeTo(output);
@@ -133,6 +133,16 @@ public class GenerativeQAParametersTests extends OpenSearchTestCase {
         assertNotEquals(parameters, new GenerativeQAParameters("", llmModel, llmQuestion, null, null, null));
         assertNotEquals(parameters, new GenerativeQAParameters(conversationId, "", llmQuestion, null, null, null));
         // assertNotEquals(parameters, new GenerativeQAParameters(conversationId, llmModel, "", null));
+
+        //validate call with debug mode
+        GenerativeQAParameters parametersWithDebug = new GenerativeQAParameters(conversationId, llmModel, llmQuestion, null, null, null, true);
+        assertNotEquals(parametersWithDebug, null);
+        assertNotEquals(parametersWithDebug, "foo");
+        assertEquals(parametersWithDebug, new GenerativeQAParameters(conversationId, llmModel, llmQuestion, null, null, null, true));
+        assertNotEquals(parametersWithDebug, new GenerativeQAParameters("", llmModel, llmQuestion, null, null, null, true));
+        assertNotEquals(parametersWithDebug, new GenerativeQAParameters(conversationId, "", llmQuestion, null, null, null, true));
+        assertNotEquals(parametersWithDebug, new GenerativeQAParameters(conversationId, "", llmQuestion, null, null, null, false));
+        assertNotEquals(parametersWithDebug, new GenerativeQAParameters(conversationId, "", llmQuestion, null, null, null));
     }
 
     public void testToXConent() throws IOException {
@@ -156,12 +166,12 @@ public class GenerativeQAParametersTests extends OpenSearchTestCase {
         int interactionSize = 2;
         int timeout = 10;
         GenerativeQAParameters parameters = new GenerativeQAParameters(
-            conversationId,
-            llmModel,
-            llmQuestion,
-            contextSize,
-            interactionSize,
-            timeout
+                conversationId,
+                llmModel,
+                llmQuestion,
+                contextSize,
+                interactionSize,
+                timeout
         );
         XContent xc = mock(XContent.class);
         OutputStream os = mock(OutputStream.class);

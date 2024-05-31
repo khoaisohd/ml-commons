@@ -83,7 +83,11 @@ public class DefaultLlmImpl implements Llm {
 
         // Response from a remote model
         Map<String, ?> dataAsMap = modelOutput.getMlModelOutputs().get(0).getMlModelTensors().get(0).getDataAsMap();
-        log.info("dataAsMap: {}", dataAsMap.toString());
+        //log data only for debugging purpose
+        if (chatCompletionInput.getDebugMode()==true){
+            log.info("dataAsmap: {}", dataAsMap.toString());
+        }
+//        log.info("dataAsMap: {}", dataAsMap.toString());
 
         // TODO dataAsMap can be null or can contain information such as throttling. Handle non-happy cases.
 
@@ -96,28 +100,28 @@ public class DefaultLlmImpl implements Llm {
         if (chatCompletionInput.getModelProvider() == ModelProvider.OPENAI) {
             inputParameters.put(CONNECTOR_INPUT_PARAMETER_MODEL, chatCompletionInput.getModel());
             String messages = PromptUtil
-                .getChatCompletionPrompt(
-                    chatCompletionInput.getSystemPrompt(),
-                    chatCompletionInput.getUserInstructions(),
-                    chatCompletionInput.getQuestion(),
-                    chatCompletionInput.getChatHistory(),
-                    chatCompletionInput.getContexts()
-                );
-            inputParameters.put(CONNECTOR_INPUT_PARAMETER_MESSAGES, messages);
-            log.info("Messages to LLM: {}", messages);
-        } else if (chatCompletionInput.getModelProvider() == ModelProvider.BEDROCK) {
-            inputParameters
-                .put(
-                    "inputs",
-                    PromptUtil
-                        .buildSingleStringPrompt(
+                    .getChatCompletionPrompt(
                             chatCompletionInput.getSystemPrompt(),
                             chatCompletionInput.getUserInstructions(),
                             chatCompletionInput.getQuestion(),
                             chatCompletionInput.getChatHistory(),
                             chatCompletionInput.getContexts()
-                        )
-                );
+                    );
+            inputParameters.put(CONNECTOR_INPUT_PARAMETER_MESSAGES, messages);
+            log.info("Messages to LLM: {}", messages);
+        } else if (chatCompletionInput.getModelProvider() == ModelProvider.BEDROCK) {
+            inputParameters
+                    .put(
+                            "inputs",
+                            PromptUtil
+                                    .buildSingleStringPrompt(
+                                            chatCompletionInput.getSystemPrompt(),
+                                            chatCompletionInput.getUserInstructions(),
+                                            chatCompletionInput.getQuestion(),
+                                            chatCompletionInput.getChatHistory(),
+                                            chatCompletionInput.getContexts()
+                                    )
+                    );
         } else if (chatCompletionInput.getModelProvider() == ModelProvider.OCI_GENAI) {
             inputParameters
                     .put(
@@ -131,7 +135,11 @@ public class DefaultLlmImpl implements Llm {
             throw new IllegalArgumentException("Unknown/unsupported model provider: " + chatCompletionInput.getModelProvider());
         }
 
-        log.info("LLM input parameters: {}", inputParameters.toString());
+        // Only log data in debug mode
+        if (chatCompletionInput.getDebugMode()==true){
+            log.info("LLM input parameters: {}", inputParameters.toString());
+        }
+//        log.info("LLM input parameters: {}", inputParameters.toString());
         return inputParameters;
     }
 
@@ -150,11 +158,11 @@ public class DefaultLlmImpl implements Llm {
                 log.info("Choices: {}", firstChoiceMap.toString());
                 Map message = (Map) firstChoiceMap.get(CONNECTOR_OUTPUT_MESSAGE);
                 log
-                    .info(
-                        "role: {}, content: {}",
-                        message.get(CONNECTOR_OUTPUT_MESSAGE_ROLE),
-                        message.get(CONNECTOR_OUTPUT_MESSAGE_CONTENT)
-                    );
+                        .info(
+                                "role: {}, content: {}",
+                                message.get(CONNECTOR_OUTPUT_MESSAGE_ROLE),
+                                message.get(CONNECTOR_OUTPUT_MESSAGE_CONTENT)
+                        );
                 answers = List.of(message.get(CONNECTOR_OUTPUT_MESSAGE_CONTENT));
             }
         } else if (provider == ModelProvider.BEDROCK) {

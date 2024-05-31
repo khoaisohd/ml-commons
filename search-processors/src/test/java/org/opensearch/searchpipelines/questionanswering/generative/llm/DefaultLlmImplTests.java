@@ -50,6 +50,7 @@ public class DefaultLlmImplTests extends OpenSearchTestCase {
 
     @Mock
     Client client;
+    private static final Boolean DEUBUG_MODE =false;
 
     public void testBuildMessageParameter() {
         DefaultLlmImpl connector = new DefaultLlmImpl("model_id", client);
@@ -58,34 +59,34 @@ public class DefaultLlmImplTests extends OpenSearchTestCase {
         contexts.add("context 1");
         contexts.add("context 2");
         List<Interaction> chatHistory = List
-            .of(
-                Interaction
-                    .fromMap(
-                        "convo1",
-                        Map
-                            .of(
-                                ConversationalIndexConstants.INTERACTIONS_CREATE_TIME_FIELD,
-                                Instant.now().toString(),
-                                ConversationalIndexConstants.INTERACTIONS_INPUT_FIELD,
-                                "message 1",
-                                ConversationalIndexConstants.INTERACTIONS_RESPONSE_FIELD,
-                                "answer1"
-                            )
-                    ),
-                Interaction
-                    .fromMap(
-                        "convo1",
-                        Map
-                            .of(
-                                ConversationalIndexConstants.INTERACTIONS_CREATE_TIME_FIELD,
-                                Instant.now().toString(),
-                                ConversationalIndexConstants.INTERACTIONS_INPUT_FIELD,
-                                "message 2",
-                                ConversationalIndexConstants.INTERACTIONS_RESPONSE_FIELD,
-                                "answer2"
-                            )
-                    )
-            );
+                .of(
+                        Interaction
+                                .fromMap(
+                                        "convo1",
+                                        Map
+                                                .of(
+                                                        ConversationalIndexConstants.INTERACTIONS_CREATE_TIME_FIELD,
+                                                        Instant.now().toString(),
+                                                        ConversationalIndexConstants.INTERACTIONS_INPUT_FIELD,
+                                                        "message 1",
+                                                        ConversationalIndexConstants.INTERACTIONS_RESPONSE_FIELD,
+                                                        "answer1"
+                                                )
+                                ),
+                        Interaction
+                                .fromMap(
+                                        "convo1",
+                                        Map
+                                                .of(
+                                                        ConversationalIndexConstants.INTERACTIONS_CREATE_TIME_FIELD,
+                                                        Instant.now().toString(),
+                                                        ConversationalIndexConstants.INTERACTIONS_INPUT_FIELD,
+                                                        "message 2",
+                                                        ConversationalIndexConstants.INTERACTIONS_RESPONSE_FIELD,
+                                                        "answer2"
+                                                )
+                                )
+                );
         String parameter = PromptUtil.getChatCompletionPrompt(question, chatHistory, contexts);
         Map<String, String> parameters = Map.of("model", "foo", "messages", parameter);
         assertTrue(isJson(parameter));
@@ -105,14 +106,15 @@ public class DefaultLlmImplTests extends OpenSearchTestCase {
         when(future.actionGet(anyLong())).thenReturn(mlOutput);
         when(mlClient.predict(any(), any())).thenReturn(future);
         ChatCompletionInput input = new ChatCompletionInput(
-            "model",
-            "question",
-            Collections.emptyList(),
-            Collections.emptyList(),
-            0,
-            "prompt",
-            "instructions",
-            Llm.ModelProvider.OPENAI
+                "model",
+                "question",
+                Collections.emptyList(),
+                Collections.emptyList(),
+                0,
+                DEUBUG_MODE,
+                "prompt",
+                "instructions",
+                Llm.ModelProvider.OPENAI
         );
         ChatCompletionOutput output = connector.doChatCompletion(input);
         verify(mlClient, times(1)).predict(any(), captor.capture());
@@ -135,14 +137,15 @@ public class DefaultLlmImplTests extends OpenSearchTestCase {
         when(future.actionGet(anyLong())).thenReturn(mlOutput);
         when(mlClient.predict(any(), any())).thenReturn(future);
         ChatCompletionInput input = new ChatCompletionInput(
-            "bedrock/model",
-            "question",
-            Collections.emptyList(),
-            Collections.emptyList(),
-            0,
-            "prompt",
-            "instructions",
-            Llm.ModelProvider.BEDROCK
+                "bedrock/model",
+                "question",
+                Collections.emptyList(),
+                Collections.emptyList(),
+                0,
+                DEUBUG_MODE,
+                "prompt",
+                "instructions",
+                Llm.ModelProvider.BEDROCK
         );
         ChatCompletionOutput output = connector.doChatCompletion(input);
         verify(mlClient, times(1)).predict(any(), captor.capture());
@@ -166,14 +169,15 @@ public class DefaultLlmImplTests extends OpenSearchTestCase {
         when(future.actionGet(anyLong())).thenReturn(mlOutput);
         when(mlClient.predict(any(), any())).thenReturn(future);
         ChatCompletionInput input = new ChatCompletionInput(
-            "model",
-            "question",
-            Collections.emptyList(),
-            Collections.emptyList(),
-            0,
-            "prompt",
-            "instructions",
-            Llm.ModelProvider.OPENAI
+                "model",
+                "question",
+                Collections.emptyList(),
+                Collections.emptyList(),
+                0,
+                DEUBUG_MODE,
+                "prompt",
+                "instructions",
+                Llm.ModelProvider.OPENAI
         );
         ChatCompletionOutput output = connector.doChatCompletion(input);
         verify(mlClient, times(1)).predict(any(), captor.capture());
@@ -198,14 +202,15 @@ public class DefaultLlmImplTests extends OpenSearchTestCase {
         when(future.actionGet(anyLong())).thenReturn(mlOutput);
         when(mlClient.predict(any(), any())).thenReturn(future);
         ChatCompletionInput input = new ChatCompletionInput(
-            "model",
-            "question",
-            Collections.emptyList(),
-            Collections.emptyList(),
-            0,
-            "prompt",
-            "instructions",
-            Llm.ModelProvider.BEDROCK
+                "model",
+                "question",
+                Collections.emptyList(),
+                Collections.emptyList(),
+                0,
+                DEUBUG_MODE,
+                "prompt",
+                "instructions",
+                Llm.ModelProvider.BEDROCK
         );
         ChatCompletionOutput output = connector.doChatCompletion(input);
         verify(mlClient, times(1)).predict(any(), captor.capture());
@@ -224,6 +229,7 @@ public class DefaultLlmImplTests extends OpenSearchTestCase {
                 List.of(Interaction.builder().input("message1").response("answer1").build()),
                 List.of("context1"),
                 0,
+                DEUBUG_MODE,
                 "prompt",
                 "instructions",
                 Llm.ModelProvider.OCI_GENAI
@@ -255,6 +261,7 @@ public class DefaultLlmImplTests extends OpenSearchTestCase {
                 Collections.emptyList(),
                 Collections.emptyList(),
                 0,
+                DEUBUG_MODE,
                 "prompt",
                 "instructions",
                 Llm.ModelProvider.OCI_GENAI
@@ -287,6 +294,7 @@ public class DefaultLlmImplTests extends OpenSearchTestCase {
                 Collections.emptyList(),
                 Collections.emptyList(),
                 0,
+                DEUBUG_MODE,
                 "prompt",
                 "instructions",
                 Llm.ModelProvider.OCI_GENAI
@@ -318,6 +326,7 @@ public class DefaultLlmImplTests extends OpenSearchTestCase {
                 Collections.emptyList(),
                 Collections.emptyList(),
                 0,
+                DEUBUG_MODE,
                 "prompt",
                 "instructions",
                 Llm.ModelProvider.OCI_GENAI

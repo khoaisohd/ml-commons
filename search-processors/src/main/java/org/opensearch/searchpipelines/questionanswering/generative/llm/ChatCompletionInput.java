@@ -40,6 +40,7 @@ public class ChatCompletionInput {
     private List<Interaction> chatHistory;
     private List<String> contexts;
     private int timeoutInSeconds;
+    private Boolean debugMode;
     private String systemPrompt;
     private String userInstructions;
     private Llm.ModelProvider modelProvider;
