@@ -120,6 +120,28 @@ public class GenerativeQAParametersTests extends OpenSearchTestCase {
         assertTrue(contextSize == intValues.get(0));
         assertTrue(interactionSize == intValues.get(1));
         assertTrue(timeout == intValues.get(2));
+
+        // test with debug mode flag
+        GenerativeQAParameters parameters2 = new GenerativeQAParameters(
+                conversationId,
+                llmModel,
+                llmQuestion,
+                contextSize,
+                interactionSize,
+                timeout,
+                 true
+        );
+        StreamOutput output2 = new DummyStreamOutput();
+        parameters.writeTo(output2);
+        List<String> actual2 = ((DummyStreamOutput) output2).getList();
+        assertEquals(3, actual2.size());
+        assertEquals(conversationId, actual2.get(0));
+        assertEquals(llmModel, actual2.get(1));
+        assertEquals(llmQuestion, actual2.get(2));
+        List<Integer> intValues2 = ((DummyStreamOutput) output2).getIntValues();
+        assertTrue(contextSize == intValues2.get(0));
+        assertTrue(interactionSize == intValues2.get(1));
+        assertTrue(timeout == intValues2.get(2));
     }
 
     public void testMisc() {

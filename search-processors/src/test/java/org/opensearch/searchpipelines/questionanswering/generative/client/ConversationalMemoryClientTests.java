@@ -81,6 +81,14 @@ public class ConversationalMemoryClientTests extends OpenSearchTestCase {
         assertEquals(conversationId, actualRequest.getConversationId());
         assertEquals(lastN, actualRequest.getMaxResults());
         assertEquals(0, actualRequest.getFrom());
+
+        // test with debug parameters
+        List<Interaction> actual2 = memoryClient.getInteractions(conversationId, lastN, true);
+        GetInteractionsRequest actualRequest2 = captor.getValue();
+        assertEquals(lastN, actual2.size());
+        assertEquals(conversationId, actualRequest2.getConversationId());
+        assertEquals(lastN, actualRequest2.getMaxResults());
+        assertEquals(0, actualRequest2.getFrom());
     }
 
     public void testGetInteractionsWithPagination() {

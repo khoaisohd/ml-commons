@@ -84,38 +84,7 @@ public class ConversationalMemoryClient {
 
     public List<Interaction> getInteractions(String conversationId, int lastN) {
 
-        Preconditions.checkArgument(lastN > 0, "lastN must be at least 1.");
-
-        log.info("In getInteractions, conversationId {}, lastN {}", conversationId, lastN);
-
-        List<Interaction> interactions = new ArrayList<>();
-        int from = 0;
-        boolean allInteractionsFetched = false;
-        int maxResults = lastN;
-        do {
-            GetInteractionsResponse response = client
-                    .execute(GetInteractionsAction.INSTANCE, new GetInteractionsRequest(conversationId, maxResults, from))
-                    .actionGet(DEFAULT_TIMEOUT_IN_MILLIS);
-            List<Interaction> list = response.getInteractions();
-            if (list != null && !CollectionUtils.isEmpty(list)) {
-                interactions.addAll(list);
-                from += list.size();
-                maxResults -= list.size();
-                // only log this data in debug mode
-                log.info("Interactions: {}, from: {}, maxResults: {}", interactions.size(), from, maxResults);
-//                log.info("Interactions: {}, from: {}, maxResults: {}", interactions, from, maxResults);
-            } else if (response.hasMorePages()) {
-                // If we didn't get any results back, we ignore this flag and break out of the loop
-                // to avoid an infinite loop.
-                // But in the future, we may support this mode, e.g. DynamoDB.
-                break;
-            }
-            log.info("Interactions: {}, from: {}, maxResults: {}", interactions.size(), from, maxResults);
-//            log.info("Interactions: {}, from: {}, maxResults: {}", interactions, from, maxResults);
-            allInteractionsFetched = !response.hasMorePages();
-        } while (from < lastN && !allInteractionsFetched);
-
-        return interactions;
+        return getInteractions(conversationId, lastN, false);
     }
 
 

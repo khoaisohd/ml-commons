@@ -134,6 +134,7 @@ public class GenerativeQAParameters implements Writeable, ToXContentObject {
         this.interactionSize = (interactionSize == null) ? SIZE_NULL_VALUE : interactionSize;
         this.timeout = (timeout == null) ? SIZE_NULL_VALUE : timeout;
         this.debugMode = false;
+//         new GenerativeQAParameters(conversationId, llmModel, llmQuestion, contextSize, interactionSize, timeout, false);
     }
 
 
@@ -150,9 +151,6 @@ public class GenerativeQAParameters implements Writeable, ToXContentObject {
     ) {
         this.conversationId = conversationId;
         this.llmModel = llmModel;
-
-        // TODO: keep this requirement until we can extract the question from the query or from the request processor parameters
-        // for question rewriting.
         Preconditions.checkArgument(!Strings.isNullOrEmpty(llmQuestion), LLM_QUESTION.getPreferredName() + " must be provided.");
         this.llmQuestion = llmQuestion;
         this.contextSize = (contextSize == null) ? SIZE_NULL_VALUE : contextSize;
