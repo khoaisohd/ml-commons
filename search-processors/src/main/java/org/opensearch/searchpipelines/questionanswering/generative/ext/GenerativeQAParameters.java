@@ -113,7 +113,7 @@ public class GenerativeQAParameters implements Writeable, ToXContentObject {
 
     @Setter
     @Getter
-    private Boolean debugMode;
+    private Boolean debugMode=false;
 
     public GenerativeQAParameters(
             String conversationId,
@@ -189,6 +189,9 @@ public class GenerativeQAParameters implements Writeable, ToXContentObject {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
+        if (debugMode==null){
+            debugMode=false;
+        }
         out.writeOptionalString(conversationId);
         out.writeOptionalString(llmModel);
 
