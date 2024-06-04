@@ -113,7 +113,7 @@ public class GenerativeQAParameters implements Writeable, ToXContentObject {
 
     @Setter
     @Getter
-    private Boolean debugMode=false;
+    private Boolean debugMode;
 
     public GenerativeQAParameters(
             String conversationId,
@@ -200,7 +200,7 @@ public class GenerativeQAParameters implements Writeable, ToXContentObject {
         out.writeInt(contextSize);
         out.writeInt(interactionSize);
         out.writeInt(timeout);
-        out.writeBoolean(debugMode);
+        out.writeBoolean(debugMode.booleanValue());
     }
 
     public static GenerativeQAParameters parse(XContentParser parser) throws IOException {
